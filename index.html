@@ -104,6 +104,10 @@
             <input id="edit-amount" type="number" min="0" step="0.01" class="w-full border border-slate-200 dark:border-slate-600 dark:bg-slate-700 rounded-xl p-3 text-sm transition-all" />
           </div>
           <div>
+            <label id="edit-date-label" class="block text-sm font-medium text-slate-600 dark:text-slate-400 mb-1.5">Date & Time</label>
+            <input id="edit-date" type="datetime-local" class="w-full border border-slate-200 dark:border-slate-600 dark:bg-slate-700 rounded-xl p-3 text-sm transition-all" />
+          </div>
+          <div>
             <label id="edit-type-label" class="block text-sm font-medium text-slate-600 dark:text-slate-400 mb-1.5">Type</label>
             <select id="edit-type" class="w-full border border-slate-200 dark:border-slate-600 dark:bg-slate-700 rounded-xl p-3 text-sm transition-all">
               <option value="income">💵 Income</option>
@@ -285,6 +289,10 @@
               <input id="amount" type="number" min="0" step="0.01" class="w-full border border-slate-200 dark:border-slate-600 dark:bg-slate-700 rounded-xl p-3 text-sm transition-all placeholder:text-slate-400" placeholder="0.00" />
             </div>
             <div>
+              <label for="entry-date" id="date-label" class="block text-sm font-medium text-slate-600 dark:text-slate-400 mb-1.5">Date & Time</label>
+              <input id="entry-date" type="datetime-local" class="w-full border border-slate-200 dark:border-slate-600 dark:bg-slate-700 rounded-xl p-3 text-sm transition-all" />
+            </div>
+            <div>
               <label for="type" id="type-label" class="block text-sm font-medium text-slate-600 dark:text-slate-400 mb-1.5">Type</label>
               <select id="type" class="w-full border border-slate-200 dark:border-slate-600 dark:bg-slate-700 rounded-xl p-3 text-sm transition-all">
                 <option value="income">💵 Income</option>
@@ -432,6 +440,7 @@
           editEntry: 'Edit Entry',
           description: 'Description',
           amount: 'Amount (₹)',
+          dateTime: 'Date & Time',
           type: 'Type',
           category: 'Category',
           cancel: 'Cancel',
@@ -550,6 +559,7 @@
           editEntry: 'प्रविष्टि संपादित करें',
           description: 'विवरण',
           amount: 'राशि (₹)',
+          dateTime: 'दिनांक और समय',
           type: 'प्रकार',
           category: 'श्रेणी',
           cancel: 'रद्द करें',
@@ -668,6 +678,7 @@
           editEntry: 'ನಮೂದನ್ನು ಸಂಪಾದಿಸಿ',
           description: 'ವಿವರಣೆ',
           amount: 'ಮೊತ್ತ (₹)',
+          dateTime: 'ದಿನಾಂಕ ಮತ್ತು ಸಮಯ',
           type: 'ವಿಧ',
           category: 'ವರ್ಗ',
           cancel: 'ರದ್ದುಮಾಡಿ',
@@ -828,6 +839,7 @@
         $('edit-modal-title').textContent = t('editEntry');
         $('edit-desc-label').textContent = t('description');
         $('edit-amount-label').textContent = t('amount');
+        $('edit-date-label').textContent = t('dateTime');
         $('edit-type-label').textContent = t('type');
         $('edit-cat-label').textContent = t('category');
         $('edit-cancel-btn').textContent = t('cancel');
@@ -840,6 +852,7 @@
         $('add-entry-heading').textContent = t('addEntry');
         $('desc-label').textContent = t('description');
         $('amount-label').textContent = t('amount');
+        $('date-label').textContent = t('dateTime');
         $('type-label').textContent = t('type');
         $('cat-label').textContent = t('category');
         $('add-entry-btn').textContent = t('addEntry');
@@ -1032,6 +1045,11 @@
       // --- Formatting ---
       function formatCurrency(n) {
         return Number(n).toLocaleString('en-IN', { minimumFractionDigits: 0, maximumFractionDigits: 2 });
+      }
+
+      function toDatetimeLocal(d) {
+        const pad = (n) => String(n).padStart(2, '0');
+        return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
       }
 
       function formatDate(iso) {
@@ -1320,9 +1338,11 @@ Respond with ONLY the category name, nothing else.`;
         if (!amount || amount <= 0) { amountEl.classList.add('input-error', 'shake'); valid = false; }
         if (!valid) return;
 
-        entries.push({ desc, amount, type, category, date: new Date().toISOString(), id: Date.now() });
+        const entryDate = $('entry-date').value ? new Date($('entry-date').value).toISOString() : new Date().toISOString();
+        entries.push({ desc, amount, type, category, date: entryDate, id: Date.now() });
         descEl.value = '';
         amountEl.value = '';
+        $('entry-date').value = toDatetimeLocal(new Date());
         $('category').value = type === 'income' ? 'Sales' : 'Miscellaneous';
         save();
         showToast(`${type === 'income' ? '+' : '-'}₹${formatCurrency(amount)} — ${desc}`, type);
@@ -1336,6 +1356,7 @@ Respond with ONLY the category name, nothing else.`;
         $('edit-desc').value = entry.desc;
         $('edit-amount').value = entry.amount;
         $('edit-type').value = entry.type;
+        $('edit-date').value = entry.date ? toDatetimeLocal(new Date(entry.date)) : toDatetimeLocal(new Date());
         $('edit-category').value = entry.category || 'Miscellaneous';
         $('edit-modal').classList.remove('hidden');
       }
@@ -1369,6 +1390,7 @@ Respond with ONLY the category name, nothing else.`;
         entries[idx].desc = desc;
         entries[idx].amount = amount;
         entries[idx].type = $('edit-type').value;
+        entries[idx].date = $('edit-date').value ? new Date($('edit-date').value).toISOString() : entries[idx].date;
         entries[idx].category = $('edit-category').value;
 
         closeEditModal();
@@ -2031,6 +2053,7 @@ Use emojis and keep it friendly. Format each point on a new line starting with a
       }));
 
       // --- Init ---
+      $('entry-date').value = toDatetimeLocal(new Date());
       applyLanguage();
       save();
     })();
