@@ -17,7 +17,7 @@
     }
   </script>
   <style>
-    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Noto+Sans+Devanagari:wght@400;500;600;700;800&family=Noto+Sans+Kannada:wght@400;500;600;700;800&display=swap');
 
     .shake { animation: shake 0.4s ease-in-out; }
     @keyframes shake {
@@ -73,6 +73,9 @@
     .dark .modal-backdrop { background: rgba(0,0,0,0.6); }
 
     .budget-bar { transition: width 0.5s ease-out; }
+
+    html[lang="hi"] body, html[lang="hi"] input, html[lang="hi"] select, html[lang="hi"] button, html[lang="hi"] textarea { font-family: 'Noto Sans Devanagari', 'Inter', system-ui, sans-serif; }
+    html[lang="kn"] body, html[lang="kn"] input, html[lang="kn"] select, html[lang="kn"] button, html[lang="kn"] textarea { font-family: 'Noto Sans Kannada', 'Inter', system-ui, sans-serif; }
   </style>
 </head>
 <body class="bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-950 min-h-screen font-sans text-slate-900 dark:text-slate-100 transition-colors duration-300">
@@ -85,7 +88,7 @@
     <div class="relative z-50 flex items-center justify-center min-h-screen p-4">
       <div class="bg-white dark:bg-slate-800 rounded-2xl shadow-xl border border-slate-200 dark:border-slate-700 p-6 w-full max-w-md fade-in">
         <div class="flex items-center justify-between mb-5">
-          <h3 class="text-lg font-bold text-slate-800 dark:text-slate-100">Edit Entry</h3>
+          <h3 id="edit-modal-title" class="text-lg font-bold text-slate-800 dark:text-slate-100">Edit Entry</h3>
           <button id="edit-modal-close" class="p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors text-slate-400">
             <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
           </button>
@@ -93,29 +96,29 @@
         <form id="edit-form" class="space-y-4">
           <input type="hidden" id="edit-id" />
           <div>
-            <label class="block text-sm font-medium text-slate-600 dark:text-slate-400 mb-1.5">Description</label>
+            <label id="edit-desc-label" class="block text-sm font-medium text-slate-600 dark:text-slate-400 mb-1.5">Description</label>
             <input id="edit-desc" class="w-full border border-slate-200 dark:border-slate-600 dark:bg-slate-700 rounded-xl p-3 text-sm transition-all placeholder:text-slate-400" />
           </div>
           <div>
-            <label class="block text-sm font-medium text-slate-600 dark:text-slate-400 mb-1.5">Amount (₹)</label>
+            <label id="edit-amount-label" class="block text-sm font-medium text-slate-600 dark:text-slate-400 mb-1.5">Amount (₹)</label>
             <input id="edit-amount" type="number" min="0" step="0.01" class="w-full border border-slate-200 dark:border-slate-600 dark:bg-slate-700 rounded-xl p-3 text-sm transition-all" />
           </div>
           <div>
-            <label class="block text-sm font-medium text-slate-600 dark:text-slate-400 mb-1.5">Type</label>
+            <label id="edit-type-label" class="block text-sm font-medium text-slate-600 dark:text-slate-400 mb-1.5">Type</label>
             <select id="edit-type" class="w-full border border-slate-200 dark:border-slate-600 dark:bg-slate-700 rounded-xl p-3 text-sm transition-all">
               <option value="income">💵 Income</option>
               <option value="expense">🧾 Expense</option>
             </select>
           </div>
           <div>
-            <label class="block text-sm font-medium text-slate-600 dark:text-slate-400 mb-1.5">Category</label>
+            <label id="edit-cat-label" class="block text-sm font-medium text-slate-600 dark:text-slate-400 mb-1.5">Category</label>
             <select id="edit-category" class="w-full border border-slate-200 dark:border-slate-600 dark:bg-slate-700 rounded-xl p-3 text-sm transition-all">
-              <optgroup label="Income">
+              <optgroup label="Income" data-i18n-label="income">
                 <option value="Sales">🛒 Sales</option>
                 <option value="Services">🔧 Services</option>
                 <option value="Other Income">💰 Other Income</option>
               </optgroup>
-              <optgroup label="Expense">
+              <optgroup label="Expense" data-i18n-label="expense">
                 <option value="Food & Beverages">🍵 Food & Beverages</option>
                 <option value="Raw Materials">📦 Raw Materials</option>
                 <option value="Utilities">💡 Utilities</option>
@@ -130,7 +133,7 @@
           </div>
           <div class="flex gap-3 pt-2">
             <button type="button" id="edit-cancel-btn" class="flex-1 px-4 py-3 border border-slate-200 dark:border-slate-600 rounded-xl text-sm font-semibold text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700 transition-all">Cancel</button>
-            <button type="submit" class="flex-1 px-4 py-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-sm font-semibold transition-all active:scale-[0.98]">Save Changes</button>
+            <button type="submit" id="edit-save-btn" class="flex-1 px-4 py-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-sm font-semibold transition-all active:scale-[0.98]">Save Changes</button>
           </div>
         </form>
       </div>
@@ -146,9 +149,27 @@
           <span class="text-4xl">💰</span>
           <h1 class="text-3xl sm:text-4xl font-extrabold tracking-tight">Smart Khata</h1>
         </div>
-        <p class="text-slate-500 dark:text-slate-400 ml-14">Daily income &amp; expense tracker for small shops</p>
+        <p id="app-subtitle" class="text-slate-500 dark:text-slate-400 ml-14">Daily income &amp; expense tracker for small shops</p>
       </div>
       <div class="flex items-center gap-2 mt-2">
+        <!-- Language Selector -->
+        <div class="relative">
+          <button id="lang-toggle" class="flex items-center gap-1.5 px-3 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 transition-all text-slate-600 dark:text-slate-400 text-sm font-medium" title="Language">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M3 5h12M9 3v2m1.048 9.5A18.022 18.022 0 016.412 9m6.088 9h7M11 21l5-10 5 10M12.751 5C11.783 10.77 8.07 15.61 3 18.129"/></svg>
+            <span id="lang-label">EN</span>
+          </button>
+          <div id="lang-dropdown" class="hidden absolute right-0 top-full mt-1 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl shadow-lg z-50 overflow-hidden min-w-[140px] fade-in">
+            <button data-lang="en" class="lang-option w-full px-4 py-2.5 text-left text-sm hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors flex items-center gap-2">
+              <span class="text-base">🇬🇧</span> English
+            </button>
+            <button data-lang="hi" class="lang-option w-full px-4 py-2.5 text-left text-sm hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors flex items-center gap-2">
+              <span class="text-base">🇮🇳</span> हिन्दी
+            </button>
+            <button data-lang="kn" class="lang-option w-full px-4 py-2.5 text-left text-sm hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors flex items-center gap-2">
+              <span class="text-base">🇮🇳</span> ಕನ್ನಡ
+            </button>
+          </div>
+        </div>
         <!-- Dark Mode Toggle -->
         <button id="theme-toggle" class="p-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 transition-all text-slate-500 dark:text-slate-400" title="Toggle theme">
           <svg id="theme-icon-light" class="w-5 h-5 hidden" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"/></svg>
@@ -165,9 +186,9 @@
     <div id="settings-panel" class="hidden mb-6 bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 p-5 fade-in">
       <div class="flex items-center gap-2 mb-3">
         <span class="text-lg">🔑</span>
-        <h3 class="font-bold">Gemini AI Settings</h3>
+        <h3 id="settings-title" class="font-bold">Gemini AI Settings</h3>
       </div>
-      <p class="text-sm text-slate-500 dark:text-slate-400 mb-3">Enter your Google Gemini API key to enable AI-powered category detection and smart summaries. Get a free key from <a href="https://aistudio.google.com/apikey" target="_blank" class="text-indigo-600 dark:text-indigo-400 hover:underline">Google AI Studio</a>.</p>
+      <p id="settings-desc" class="text-sm text-slate-500 dark:text-slate-400 mb-3">Enter your Google Gemini API key to enable AI-powered category detection and smart summaries. Get a free key from <a href="https://aistudio.google.com/apikey" target="_blank" class="text-indigo-600 dark:text-indigo-400 hover:underline">Google AI Studio</a>.</p>
       <div class="flex gap-2">
         <input id="api-key-input" type="password" class="flex-1 border border-slate-200 dark:border-slate-600 dark:bg-slate-700 rounded-xl p-3 text-sm transition-all placeholder:text-slate-400" placeholder="AIzaSy..." />
         <button id="save-key-btn" class="px-5 py-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-sm font-semibold transition-all active:scale-[0.98]">Save</button>
@@ -178,17 +199,17 @@
       <div class="mt-5 pt-5 border-t border-slate-100 dark:border-slate-700">
         <div class="flex items-center gap-2 mb-3">
           <span class="text-lg">💾</span>
-          <h3 class="font-bold">Data Backup &amp; Restore</h3>
+          <h3 id="backup-title" class="font-bold">Data Backup &amp; Restore</h3>
         </div>
-        <p class="text-sm text-slate-500 dark:text-slate-400 mb-3">Export all your entries and settings as a JSON file, or restore from a previous backup.</p>
+        <p id="backup-desc" class="text-sm text-slate-500 dark:text-slate-400 mb-3">Export all your entries and settings as a JSON file, or restore from a previous backup.</p>
         <div class="flex gap-2">
           <button id="backup-btn" class="flex-1 px-4 py-2.5 border border-slate-200 dark:border-slate-600 rounded-xl text-sm font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 transition-all flex items-center justify-center gap-2">
             <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
-            Export Backup
+            <span id="backup-btn-text">Export Backup</span>
           </button>
           <label class="flex-1 px-4 py-2.5 border border-slate-200 dark:border-slate-600 rounded-xl text-sm font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 transition-all flex items-center justify-center gap-2 cursor-pointer">
             <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/></svg>
-            Import Backup
+            <span id="restore-btn-text">Import Backup</span>
             <input type="file" id="restore-input" accept=".json" class="hidden" />
           </label>
         </div>
@@ -200,18 +221,18 @@
       <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
         <div class="flex items-center gap-2">
           <span class="text-lg">🎯</span>
-          <h3 class="font-bold">Monthly Budget Goal</h3>
+          <h3 id="budget-heading" class="font-bold">Monthly Budget Goal</h3>
         </div>
         <div class="flex items-center gap-2">
-          <span class="text-sm text-slate-500 dark:text-slate-400">Budget: ₹</span>
+          <span id="budget-label" class="text-sm text-slate-500 dark:text-slate-400">Budget: ₹</span>
           <input id="budget-input" type="number" min="0" step="100" class="w-28 border border-slate-200 dark:border-slate-600 dark:bg-slate-700 rounded-lg px-3 py-1.5 text-sm transition-all" placeholder="10000" />
-          <button id="save-budget-btn" class="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-xs font-semibold transition-all">Set</button>
+          <button id="save-budget-btn" class="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-xs font-semibold transition-all"><span id="set-btn-text">Set</span></button>
         </div>
       </div>
       <div id="budget-display">
         <div class="flex items-center justify-between text-sm mb-2">
-          <span class="text-slate-600 dark:text-slate-400">Spent this month: <span id="budget-spent" class="font-semibold text-rose-600 dark:text-rose-400">₹0</span></span>
-          <span class="text-slate-600 dark:text-slate-400">Budget: <span id="budget-limit" class="font-semibold">₹0</span></span>
+          <span><span id="spent-label">Spent this month</span>: <span id="budget-spent" class="font-semibold text-rose-600 dark:text-rose-400">₹0</span></span>
+          <span><span id="budget-label-2">Budget</span>: <span id="budget-limit" class="font-semibold">₹0</span></span>
         </div>
         <div class="w-full bg-slate-100 dark:bg-slate-700 rounded-full h-3 overflow-hidden">
           <div id="budget-bar" class="budget-bar h-full rounded-full bg-gradient-to-r from-emerald-500 to-emerald-400" style="width: 0%"></div>
@@ -228,21 +249,21 @@
       <div class="bg-gradient-to-br from-emerald-500 to-emerald-600 rounded-2xl shadow-lg shadow-emerald-500/20 p-5 text-white transition-transform hover:scale-[1.02]">
         <div class="flex items-center gap-2 mb-1">
           <svg class="w-5 h-5 opacity-80" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/></svg>
-          <span class="text-sm font-medium opacity-90">Income</span>
+          <span id="card-income-label" class="text-sm font-medium opacity-90">Income</span>
         </div>
         <p class="text-2xl sm:text-3xl font-bold">₹<span id="income">0</span></p>
       </div>
       <div class="bg-gradient-to-br from-rose-500 to-rose-600 rounded-2xl shadow-lg shadow-rose-500/20 p-5 text-white transition-transform hover:scale-[1.02]">
         <div class="flex items-center gap-2 mb-1">
           <svg class="w-5 h-5 opacity-80" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M20 12H4"/></svg>
-          <span class="text-sm font-medium opacity-90">Expense</span>
+          <span id="card-expense-label" class="text-sm font-medium opacity-90">Expense</span>
         </div>
         <p class="text-2xl sm:text-3xl font-bold">₹<span id="expense">0</span></p>
       </div>
       <div id="profit-card" class="bg-gradient-to-br from-indigo-500 to-indigo-600 rounded-2xl shadow-lg shadow-indigo-500/20 p-5 text-white transition-transform hover:scale-[1.02]">
         <div class="flex items-center gap-2 mb-1">
           <svg class="w-5 h-5 opacity-80" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"/></svg>
-          <span class="text-sm font-medium opacity-90">Profit</span>
+          <span id="card-profit-label" class="text-sm font-medium opacity-90">Profit</span>
         </div>
         <p class="text-2xl sm:text-3xl font-bold">₹<span id="profit">0</span></p>
       </div>
@@ -253,18 +274,18 @@
       <!-- Add Entry Form -->
       <div class="md:col-span-2">
         <div class="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 p-6 sticky top-6">
-          <h2 class="text-lg font-bold mb-5">Add Entry</h2>
+          <h2 id="add-entry-heading" class="text-lg font-bold mb-5">Add Entry</h2>
           <form id="entry-form" class="space-y-4">
             <div>
-              <label for="desc" class="block text-sm font-medium text-slate-600 dark:text-slate-400 mb-1.5">Description</label>
+              <label for="desc" id="desc-label" class="block text-sm font-medium text-slate-600 dark:text-slate-400 mb-1.5">Description</label>
               <input id="desc" class="w-full border border-slate-200 dark:border-slate-600 dark:bg-slate-700 rounded-xl p-3 text-sm transition-all placeholder:text-slate-400" placeholder="e.g. tea sales, milk, stock..." />
             </div>
             <div>
-              <label for="amount" class="block text-sm font-medium text-slate-600 dark:text-slate-400 mb-1.5">Amount (₹)</label>
+              <label for="amount" id="amount-label" class="block text-sm font-medium text-slate-600 dark:text-slate-400 mb-1.5">Amount (₹)</label>
               <input id="amount" type="number" min="0" step="0.01" class="w-full border border-slate-200 dark:border-slate-600 dark:bg-slate-700 rounded-xl p-3 text-sm transition-all placeholder:text-slate-400" placeholder="0.00" />
             </div>
             <div>
-              <label for="type" class="block text-sm font-medium text-slate-600 dark:text-slate-400 mb-1.5">Type</label>
+              <label for="type" id="type-label" class="block text-sm font-medium text-slate-600 dark:text-slate-400 mb-1.5">Type</label>
               <select id="type" class="w-full border border-slate-200 dark:border-slate-600 dark:bg-slate-700 rounded-xl p-3 text-sm transition-all">
                 <option value="income">💵 Income</option>
                 <option value="expense">🧾 Expense</option>
@@ -272,16 +293,16 @@
             </div>
             <div>
               <div class="flex items-center justify-between mb-1.5">
-                <label for="category" class="block text-sm font-medium text-slate-600 dark:text-slate-400">Category</label>
-                <span id="ai-detecting" class="text-xs text-indigo-500 hidden">✨ AI detecting<span class="typing-dots"></span></span>
+                <label for="category" id="cat-label" class="block text-sm font-medium text-slate-600 dark:text-slate-400">Category</label>
+                <span id="ai-detecting" class="text-xs text-indigo-500 hidden">✨ <span id="ai-detecting-text">AI detecting</span><span class="typing-dots"></span></span>
               </div>
               <select id="category" class="w-full border border-slate-200 dark:border-slate-600 dark:bg-slate-700 rounded-xl p-3 text-sm transition-all">
-                <optgroup label="Income">
+                <optgroup label="Income" data-i18n-label="income">
                   <option value="Sales">🛒 Sales</option>
                   <option value="Services">🔧 Services</option>
                   <option value="Other Income">💰 Other Income</option>
                 </optgroup>
-                <optgroup label="Expense">
+                <optgroup label="Expense" data-i18n-label="expense">
                   <option value="Food & Beverages">🍵 Food & Beverages</option>
                   <option value="Raw Materials">📦 Raw Materials</option>
                   <option value="Utilities">💡 Utilities</option>
@@ -294,7 +315,7 @@
                 </optgroup>
               </select>
             </div>
-            <button type="submit" class="w-full bg-slate-900 dark:bg-indigo-600 hover:bg-slate-800 dark:hover:bg-indigo-700 active:scale-[0.98] text-white rounded-xl p-3 font-semibold text-sm transition-all">
+            <button type="submit" id="add-entry-btn" class="w-full bg-slate-900 dark:bg-indigo-600 hover:bg-slate-800 dark:hover:bg-indigo-700 active:scale-[0.98] text-white rounded-xl p-3 font-semibold text-sm transition-all">
               Add Entry
             </button>
           </form>
@@ -305,7 +326,7 @@
       <div class="md:col-span-3">
         <div class="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 p-6">
           <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-5">
-            <h2 class="text-lg font-bold">Ledger</h2>
+            <h2 id="ledger-heading" class="text-lg font-bold">Ledger</h2>
             <div class="flex items-center gap-2">
               <div class="relative flex-1 sm:flex-none">
                 <svg class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
@@ -326,8 +347,8 @@
 
           <div id="empty-state" class="text-center py-12 hidden">
             <div class="text-5xl mb-3">📒</div>
-            <p class="text-slate-500 dark:text-slate-400 font-medium">No entries yet</p>
-            <p class="text-slate-400 dark:text-slate-500 text-sm mt-1">Add your first income or expense to get started</p>
+            <p id="empty-title" class="text-slate-500 dark:text-slate-400 font-medium">No entries yet</p>
+            <p id="empty-subtitle" class="text-slate-400 dark:text-slate-500 text-sm mt-1">Add your first income or expense to get started</p>
           </div>
         </div>
       </div>
@@ -337,23 +358,23 @@
     <div class="grid md:grid-cols-5 gap-6 mb-8">
       <div class="md:col-span-3">
         <div class="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 p-6">
-          <h2 class="text-lg font-bold mb-4">📊 Daily Overview</h2>
+          <h2 id="chart-bar-heading" class="text-lg font-bold mb-4">📊 Daily Overview</h2>
           <div class="relative" style="height: 280px;">
             <canvas id="bar-chart"></canvas>
           </div>
           <div id="bar-chart-empty" class="hidden text-center py-10">
-            <p class="text-slate-400 text-sm">Add entries to see your daily chart</p>
+            <p id="bar-chart-empty-text" class="text-slate-400 text-sm">Add entries to see your daily chart</p>
           </div>
         </div>
       </div>
       <div class="md:col-span-2">
         <div class="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 p-6">
-          <h2 class="text-lg font-bold mb-4">🏷️ Expense Categories</h2>
+          <h2 id="chart-doughnut-heading" class="text-lg font-bold mb-4">🏷️ Expense Categories</h2>
           <div class="relative" style="height: 280px;">
             <canvas id="doughnut-chart"></canvas>
           </div>
           <div id="doughnut-chart-empty" class="hidden text-center py-10">
-            <p class="text-slate-400 text-sm">Add expense entries to see category breakdown</p>
+            <p id="doughnut-chart-empty-text" class="text-slate-400 text-sm">Add expense entries to see category breakdown</p>
           </div>
         </div>
       </div>
@@ -362,7 +383,7 @@
     <!-- Reports Section -->
     <div class="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 p-6 mb-8">
       <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
-        <h2 class="text-lg font-bold">📋 Reports</h2>
+        <h2 id="reports-heading" class="text-lg font-bold">📋 Reports</h2>
         <div class="flex items-center gap-1 bg-slate-100 dark:bg-slate-700 rounded-lg p-1">
           <button id="tab-daily" class="px-4 py-1.5 rounded-md text-sm font-medium transition-all bg-white dark:bg-slate-600 shadow-sm text-slate-800 dark:text-white">Daily</button>
           <button id="tab-weekly" class="px-4 py-1.5 rounded-md text-sm font-medium transition-all text-slate-500 dark:text-slate-400 hover:text-slate-700">Weekly</button>
@@ -374,18 +395,18 @@
 
       <div id="report-empty" class="text-center py-10 hidden">
         <div class="text-4xl mb-2">📊</div>
-        <p class="text-slate-400 text-sm">No data for reports yet</p>
+        <p id="report-empty-text" class="text-slate-400 text-sm">No data for reports yet</p>
       </div>
 
       <!-- AI Summary -->
       <div class="mt-6 pt-5 border-t border-slate-100 dark:border-slate-700">
         <button id="ai-summary-btn" class="w-full bg-gradient-to-r from-indigo-500 to-purple-500 hover:from-indigo-600 hover:to-purple-600 active:scale-[0.98] text-white rounded-xl p-3.5 font-semibold text-sm transition-all flex items-center justify-center gap-2">
-          <span>✨</span> Generate AI Summary
+          <span>✨</span> <span id="ai-summary-btn-text">Generate AI Summary</span>
         </button>
         <div id="ai-summary-output" class="mt-4 text-sm text-slate-700 dark:text-slate-300 leading-relaxed hidden rounded-xl bg-gradient-to-br from-indigo-50 to-purple-50 dark:from-indigo-950/40 dark:to-purple-950/40 border border-indigo-100 dark:border-indigo-800 p-5">
           <div class="flex items-center gap-2 mb-2">
             <span>🤖</span>
-            <span class="font-semibold text-indigo-700 dark:text-indigo-400">Gemini AI Summary</span>
+            <span id="ai-summary-label" class="font-semibold text-indigo-700 dark:text-indigo-400">Gemini AI Summary</span>
           </div>
           <div id="ai-summary-text"></div>
         </div>
@@ -397,6 +418,546 @@
   <script>
     (function() {
       const $ = (id) => document.getElementById(id);
+
+      // --- Translations ---
+      const LANG_CONFIG = {
+        en: { label: 'EN', flag: '🇬🇧', name: 'English' },
+        hi: { label: 'हि', flag: '🇮🇳', name: 'हिन्दी' },
+        kn: { label: 'ಕ', flag: '🇮🇳', name: 'ಕನ್ನಡ' },
+      };
+
+      const TRANSLATIONS = {
+        en: {
+          appSubtitle: 'Daily income & expense tracker for small shops',
+          editEntry: 'Edit Entry',
+          description: 'Description',
+          amount: 'Amount (₹)',
+          type: 'Type',
+          category: 'Category',
+          cancel: 'Cancel',
+          saveChanges: 'Save Changes',
+          income: 'Income',
+          expense: 'Expense',
+          profit: 'Profit',
+          addEntry: 'Add Entry',
+          ledger: 'Ledger',
+          search: 'Search...',
+          all: 'All',
+          dailyOverview: '📊 Daily Overview',
+          expenseCategories: '🏷️ Expense Categories',
+          reports: '📋 Reports',
+          daily: 'Daily',
+          weekly: 'Weekly',
+          allTime: 'All Time',
+          generateAISummary: 'Generate AI Summary',
+          geminiAISummary: 'Gemini AI Summary',
+          geminiSettings: 'Gemini AI Settings',
+          geminiDesc: 'Enter your Google Gemini API key to enable AI-powered category detection and smart summaries. Get a free key from',
+          save: 'Save',
+          dataBackup: 'Data Backup & Restore',
+          backupDesc: 'Export all your entries and settings as a JSON file, or restore from a previous backup.',
+          exportBackup: 'Export Backup',
+          importBackup: 'Import Backup',
+          monthlyBudget: 'Monthly Budget Goal',
+          budgetColon: 'Budget: ₹',
+          set: 'Set',
+          spentThisMonth: 'Spent this month',
+          budget: 'Budget',
+          used: 'used',
+          remaining: 'remaining',
+          overBudget: 'over budget!',
+          setBudgetToTrack: 'Set a budget to track',
+          noEntriesYet: 'No entries yet',
+          addFirstEntry: 'Add your first income or expense to get started',
+          noMatchingEntries: 'No matching entries',
+          adjustSearch: 'Try adjusting your search or filter',
+          noDataReports: 'No data for reports yet',
+          addEntriesToSeeChart: 'Add entries to see your daily chart',
+          addExpenseEntries: 'Add expense entries to see category breakdown',
+          entryUpdated: 'Entry updated',
+          entryDeleted: 'Entry deleted',
+          fillFieldsCorrectly: 'Please fill in all fields correctly',
+          apiKeySavedMsg: '✅ API key saved! AI features enabled.',
+          apiKeyLoaded: '✅ API key loaded.',
+          keyRemoved: 'Key removed. Using keyword-based detection.',
+          apiKeySaved: 'Gemini API key saved',
+          backupExported: 'Backup exported!',
+          csvExported: 'CSV exported!',
+          nothingToExport: 'Nothing to export',
+          invalidBackup: 'Invalid backup file',
+          failedReadBackup: 'Failed to read backup file',
+          restored: 'Restored',
+          entries: 'entries',
+          budgetGoalSet: 'Budget goal set',
+          addSomeEntries: 'Add some entries first',
+          generating: 'Generating...',
+          aiDetecting: 'AI detecting',
+          allTimeSummary: '📊 All Time Summary',
+          totalIncome: 'Total Income',
+          totalExpense: 'Total Expense',
+          netProfit: 'Net Profit',
+          avgDailyIncome: 'Avg Daily Income',
+          avgDailyExpense: 'Avg Daily Expense',
+          noDate: 'No date',
+          descPlaceholder: 'e.g. tea sales, milk, stock...',
+          catSales: 'Sales',
+          catServices: 'Services',
+          catOtherIncome: 'Other Income',
+          catFoodBeverages: 'Food & Beverages',
+          catRawMaterials: 'Raw Materials',
+          catUtilities: 'Utilities',
+          catTransport: 'Transport',
+          catSalary: 'Salary',
+          catRent: 'Rent',
+          catMaintenance: 'Maintenance',
+          catMarketing: 'Marketing',
+          catMiscellaneous: 'Miscellaneous',
+          goodNews: 'Good news!',
+          breakEven: 'Break even.',
+          warning: 'Warning:',
+          profitMsg: "You're profitable with",
+          netProfitWord: 'net profit.',
+          breakEvenMsg: 'Income and expenses are balanced — aim for positive margins.',
+          lossMsg: "You're running at a loss of",
+          immediateAction: 'Immediate action needed!',
+          topExpense: 'Top expense:',
+          ofSpending: 'of spending',
+          concentratedSpending: 'This is very concentrated — diversify or negotiate rates.',
+          wellDistributed: 'Spending is well-distributed.',
+          rawMaterialsLabel: 'Raw Materials:',
+          ofExpenses: 'of expenses',
+          bulkPurchase: 'Consider bulk purchasing or finding alternative suppliers.',
+          expenseRatio: 'Expense ratio:',
+          criticallyHigh: 'critically high! Cut non-essential costs immediately.',
+          marginsAreThin: 'margins are thin. Look for areas to reduce spending.',
+          healthyMargins: 'healthy margins! Keep this up.',
+          budgetLabel: 'Budget:',
+          overBudgetBy: 'Over budget by',
+          ofLimit: 'of',
+          limit: 'limit',
+          budgetUsed: 'used',
+          remainingThisMonth: 'remaining this month.',
+          tip: 'Tip:',
+          saveWord: 'Save',
+          ofProfitEmergency: '(20% of profit) as an emergency fund.',
+          entriesLabel: 'Entries:',
+          totalTransactions: 'total transactions tracked.',
+          addGeminiTip: 'Add your Gemini API key in settings for smarter AI-powered insights!',
+          deleteWord: 'Delete',
+        },
+        hi: {
+          appSubtitle: 'छोटी दुकानों के लिए दैनिक आय और व्यय ट्रैकर',
+          editEntry: 'प्रविष्टि संपादित करें',
+          description: 'विवरण',
+          amount: 'राशि (₹)',
+          type: 'प्रकार',
+          category: 'श्रेणी',
+          cancel: 'रद्द करें',
+          saveChanges: 'बदलाव सहेजें',
+          income: 'आय',
+          expense: 'व्यय',
+          profit: 'लाभ',
+          addEntry: 'प्रविष्टि जोड़ें',
+          ledger: 'खाता बही',
+          search: 'खोजें...',
+          all: 'सभी',
+          dailyOverview: '📊 दैनिक अवलोकन',
+          expenseCategories: '🏷️ व्यय श्रेणियाँ',
+          reports: '📋 रिपोर्ट',
+          daily: 'दैनिक',
+          weekly: 'साप्ताहिक',
+          allTime: 'सभी समय',
+          generateAISummary: 'AI सारांश बनाएं',
+          geminiAISummary: 'Gemini AI सारांश',
+          geminiSettings: 'Gemini AI सेटिंग्स',
+          geminiDesc: 'AI-संचालित श्रेणी पहचान और स्मार्ट सारांश के लिए अपनी Google Gemini API कुंजी दर्ज करें। मुफ्त कुंजी यहाँ से प्राप्त करें',
+          save: 'सहेजें',
+          dataBackup: 'डेटा बैकअप और रिस्टोर',
+          backupDesc: 'अपनी सभी प्रविष्टियाँ और सेटिंग्स JSON फ़ाइल के रूप में निर्यात करें, या पिछले बैकअप से पुनर्स्थापित करें।',
+          exportBackup: 'बैकअप निर्यात',
+          importBackup: 'बैकअप आयात',
+          monthlyBudget: 'मासिक बजट लक्ष्य',
+          budgetColon: 'बजट: ₹',
+          set: 'सेट',
+          spentThisMonth: 'इस माह खर्च',
+          budget: 'बजट',
+          used: 'उपयोग',
+          remaining: 'शेष',
+          overBudget: 'बजट से अधिक!',
+          setBudgetToTrack: 'ट्रैक करने के लिए बजट सेट करें',
+          noEntriesYet: 'अभी कोई प्रविष्टि नहीं',
+          addFirstEntry: 'शुरू करने के लिए अपनी पहली आय या व्यय जोड़ें',
+          noMatchingEntries: 'कोई मेल खाती प्रविष्टि नहीं',
+          adjustSearch: 'अपनी खोज या फ़िल्टर बदलें',
+          noDataReports: 'रिपोर्ट के लिए अभी कोई डेटा नहीं',
+          addEntriesToSeeChart: 'दैनिक चार्ट देखने के लिए प्रविष्टियाँ जोड़ें',
+          addExpenseEntries: 'श्रेणी विभाजन देखने के लिए व्यय प्रविष्टियाँ जोड़ें',
+          entryUpdated: 'प्रविष्टि अपडेट हुई',
+          entryDeleted: 'प्रविष्टि हटाई गई',
+          fillFieldsCorrectly: 'कृपया सभी फ़ील्ड सही से भरें',
+          apiKeySavedMsg: '✅ API कुंजी सहेजी गई! AI सुविधाएं सक्रिय।',
+          apiKeyLoaded: '✅ API कुंजी लोड हुई।',
+          keyRemoved: 'कुंजी हटाई गई। कीवर्ड-आधारित पहचान का उपयोग।',
+          apiKeySaved: 'Gemini API कुंजी सहेजी गई',
+          backupExported: 'बैकअप निर्यात हुआ!',
+          csvExported: 'CSV निर्यात हुआ!',
+          nothingToExport: 'निर्यात के लिए कुछ नहीं',
+          invalidBackup: 'अमान्य बैकअप फ़ाइल',
+          failedReadBackup: 'बैकअप फ़ाइल पढ़ने में विफल',
+          restored: 'पुनर्स्थापित',
+          entries: 'प्रविष्टियाँ',
+          budgetGoalSet: 'बजट लक्ष्य सेट',
+          addSomeEntries: 'पहले कुछ प्रविष्टियाँ जोड़ें',
+          generating: 'बना रहे हैं...',
+          aiDetecting: 'AI पहचान रहा है',
+          allTimeSummary: '📊 सर्वकालिक सारांश',
+          totalIncome: 'कुल आय',
+          totalExpense: 'कुल व्यय',
+          netProfit: 'शुद्ध लाभ',
+          avgDailyIncome: 'औसत दैनिक आय',
+          avgDailyExpense: 'औसत दैनिक व्यय',
+          noDate: 'कोई तारीख नहीं',
+          descPlaceholder: 'जैसे चाय बिक्री, दूध, स्टॉक...',
+          catSales: 'बिक्री',
+          catServices: 'सेवाएं',
+          catOtherIncome: 'अन्य आय',
+          catFoodBeverages: 'खाद्य और पेय',
+          catRawMaterials: 'कच्चा माल',
+          catUtilities: 'उपयोगिताएं',
+          catTransport: 'परिवहन',
+          catSalary: 'वेतन',
+          catRent: 'किराया',
+          catMaintenance: 'रखरखाव',
+          catMarketing: 'विपणन',
+          catMiscellaneous: 'विविध',
+          goodNews: 'अच्छी खबर!',
+          breakEven: 'बराबरी पर।',
+          warning: 'चेतावनी:',
+          profitMsg: 'आप लाभ में हैं',
+          netProfitWord: 'शुद्ध लाभ।',
+          breakEvenMsg: 'आय और व्यय संतुलित हैं — सकारात्मक मार्जिन का लक्ष्य रखें।',
+          lossMsg: 'आप घाटे में चल रहे हैं',
+          immediateAction: 'तुरंत कार्रवाई आवश्यक!',
+          topExpense: 'शीर्ष व्यय:',
+          ofSpending: 'खर्च का',
+          concentratedSpending: 'यह बहुत केंद्रित है — विविधता लाएं या दरें बातचीत करें।',
+          wellDistributed: 'खर्च अच्छी तरह वितरित है।',
+          rawMaterialsLabel: 'कच्चा माल:',
+          ofExpenses: 'व्यय का',
+          bulkPurchase: 'थोक खरीद या वैकल्पिक आपूर्तिकर्ता खोजें।',
+          expenseRatio: 'व्यय अनुपात:',
+          criticallyHigh: 'गंभीर रूप से अधिक! गैर-आवश्यक लागत तुरंत कम करें।',
+          marginsAreThin: 'मार्जिन कम है। खर्च कम करने के क्षेत्र खोजें।',
+          healthyMargins: 'स्वस्थ मार्जिन! ऐसे ही जारी रखें।',
+          budgetLabel: 'बजट:',
+          overBudgetBy: 'बजट से अधिक',
+          ofLimit: 'की सीमा',
+          limit: 'सीमा',
+          budgetUsed: 'उपयोग',
+          remainingThisMonth: 'इस माह शेष।',
+          tip: 'सुझाव:',
+          saveWord: 'बचाएं',
+          ofProfitEmergency: '(लाभ का 20%) आपातकालीन निधि के रूप में।',
+          entriesLabel: 'प्रविष्टियाँ:',
+          totalTransactions: 'कुल लेनदेन ट्रैक किए गए।',
+          addGeminiTip: 'स्मार्ट AI अंतर्दृष्टि के लिए सेटिंग्स में अपनी Gemini API कुंजी जोड़ें!',
+          deleteWord: 'हटाएं',
+        },
+        kn: {
+          appSubtitle: 'ಸಣ್ಣ ಅಂಗಡಿಗಳಿಗೆ ದೈನಿಕ ಆದಾಯ ಮತ್ತು ವೆಚ್ಚ ಟ್ರ್ಯಾಕರ್',
+          editEntry: 'ನಮೂದನ್ನು ಸಂಪಾದಿಸಿ',
+          description: 'ವಿವರಣೆ',
+          amount: 'ಮೊತ್ತ (₹)',
+          type: 'ವಿಧ',
+          category: 'ವರ್ಗ',
+          cancel: 'ರದ್ದುಮಾಡಿ',
+          saveChanges: 'ಬದಲಾವಣೆಗಳನ್ನು ಉಳಿಸಿ',
+          income: 'ಆದಾಯ',
+          expense: 'ಖರ್ಚು',
+          profit: 'ಲಾಭ',
+          addEntry: 'ನಮೂದು ಸೇರಿಸಿ',
+          ledger: 'ಖಾತೆ ಪುಸ್ತಕ',
+          search: 'ಹುಡುಕಿ...',
+          all: 'ಎಲ್ಲಾ',
+          dailyOverview: '📊 ದೈನಿಕ ಅವಲೋಕನ',
+          expenseCategories: '🏷️ ಖರ್ಚು ವರ್ಗಗಳು',
+          reports: '📋 ವರದಿಗಳು',
+          daily: 'ದೈನಿಕ',
+          weekly: 'ಸಾಪ್ತಾಹಿಕ',
+          allTime: 'ಎಲ್ಲಾ ಸಮಯ',
+          generateAISummary: 'AI ಸಾರಾಂಶ ರಚಿಸಿ',
+          geminiAISummary: 'Gemini AI ಸಾರಾಂಶ',
+          geminiSettings: 'Gemini AI ಸೆಟ್ಟಿಂಗ್‌ಗಳು',
+          geminiDesc: 'AI-ಚಾಲಿತ ವರ್ಗ ಗುರುತಿಸುವಿಕೆ ಮತ್ತು ಸ್ಮಾರ್ಟ್ ಸಾರಾಂಶಗಳಿಗಾಗಿ ನಿಮ್ಮ Google Gemini API ಕೀ ನಮೂದಿಸಿ. ಉಚಿತ ಕೀ ಇಲ್ಲಿ ಪಡೆಯಿರಿ',
+          save: 'ಉಳಿಸಿ',
+          dataBackup: 'ಡೇಟಾ ಬ್ಯಾಕಪ್ ಮತ್ತು ಮರುಸ್ಥಾಪನೆ',
+          backupDesc: 'ನಿಮ್ಮ ಎಲ್ಲಾ ನಮೂದುಗಳು ಮತ್ತು ಸೆಟ್ಟಿಂಗ್‌ಗಳನ್ನು JSON ಫೈಲ್ ಆಗಿ ರಫ್ತು ಮಾಡಿ, ಅಥವಾ ಹಿಂದಿನ ಬ್ಯಾಕಪ್‌ನಿಂದ ಮರುಸ್ಥಾಪಿಸಿ.',
+          exportBackup: 'ಬ್ಯಾಕಪ್ ರಫ್ತು',
+          importBackup: 'ಬ್ಯಾಕಪ್ ಆಮದು',
+          monthlyBudget: 'ಮಾಸಿಕ ಬಜೆಟ್ ಗುರಿ',
+          budgetColon: 'ಬಜೆಟ್: ₹',
+          set: 'ಸೆಟ್',
+          spentThisMonth: 'ಈ ತಿಂಗಳು ಖರ್ಚು',
+          budget: 'ಬಜೆಟ್',
+          used: 'ಬಳಕೆ',
+          remaining: 'ಉಳಿದಿದೆ',
+          overBudget: 'ಬಜೆಟ್ ಮೀರಿದೆ!',
+          setBudgetToTrack: 'ಟ್ರ್ಯಾಕ್ ಮಾಡಲು ಬಜೆಟ್ ಸೆಟ್ ಮಾಡಿ',
+          noEntriesYet: 'ಇನ್ನೂ ನಮೂದುಗಳಿಲ್ಲ',
+          addFirstEntry: 'ಪ್ರಾರಂಭಿಸಲು ನಿಮ್ಮ ಮೊದಲ ಆದಾಯ ಅಥವಾ ಖರ್ಚು ಸೇರಿಸಿ',
+          noMatchingEntries: 'ಹೊಂದಿಕೆಯಾಗುವ ನಮೂದುಗಳಿಲ್ಲ',
+          adjustSearch: 'ನಿಮ್ಮ ಹುಡುಕಾಟ ಅಥವಾ ಫಿಲ್ಟರ್ ಬದಲಾಯಿಸಿ',
+          noDataReports: 'ವರದಿಗಳಿಗೆ ಇನ್ನೂ ಡೇಟಾ ಇಲ್ಲ',
+          addEntriesToSeeChart: 'ದೈನಿಕ ಚಾರ್ಟ್ ನೋಡಲು ನಮೂದುಗಳನ್ನು ಸೇರಿಸಿ',
+          addExpenseEntries: 'ವರ್ಗ ವಿಂಗಡಣೆ ನೋಡಲು ಖರ್ಚು ನಮೂದುಗಳನ್ನು ಸೇರಿಸಿ',
+          entryUpdated: 'ನಮೂದು ನವೀಕರಿಸಲಾಗಿದೆ',
+          entryDeleted: 'ನಮೂದು ಅಳಿಸಲಾಗಿದೆ',
+          fillFieldsCorrectly: 'ದಯವಿಟ್ಟು ಎಲ್ಲಾ ಕ್ಷೇತ್ರಗಳನ್ನು ಸರಿಯಾಗಿ ಭರ್ತಿ ಮಾಡಿ',
+          apiKeySavedMsg: '✅ API ಕೀ ಉಳಿಸಲಾಗಿದೆ! AI ವೈಶಿಷ್ಟ್ಯಗಳು ಸಕ್ರಿಯ.',
+          apiKeyLoaded: '✅ API ಕೀ ಲೋಡ್ ಆಗಿದೆ.',
+          keyRemoved: 'ಕೀ ತೆಗೆದುಹಾಕಲಾಗಿದೆ. ಕೀವರ್ಡ್-ಆಧಾರಿತ ಗುರುತಿಸುವಿಕೆ ಬಳಕೆ.',
+          apiKeySaved: 'Gemini API ಕೀ ಉಳಿಸಲಾಗಿದೆ',
+          backupExported: 'ಬ್ಯಾಕಪ್ ರಫ್ತು ಆಗಿದೆ!',
+          csvExported: 'CSV ರಫ್ತು ಆಗಿದೆ!',
+          nothingToExport: 'ರಫ್ತು ಮಾಡಲು ಏನೂ ಇಲ್ಲ',
+          invalidBackup: 'ಅಮಾನ್ಯ ಬ್ಯಾಕಪ್ ಫೈಲ್',
+          failedReadBackup: 'ಬ್ಯಾಕಪ್ ಫೈಲ್ ಓದಲು ವಿಫಲ',
+          restored: 'ಮರುಸ್ಥಾಪಿಸಲಾಗಿದೆ',
+          entries: 'ನಮೂದುಗಳು',
+          budgetGoalSet: 'ಬಜೆಟ್ ಗುರಿ ಸೆಟ್',
+          addSomeEntries: 'ಮೊದಲು ಕೆಲವು ನಮೂದುಗಳನ್ನು ಸೇರಿಸಿ',
+          generating: 'ರಚಿಸಲಾಗುತ್ತಿದೆ...',
+          aiDetecting: 'AI ಗುರುತಿಸುತ್ತಿದೆ',
+          allTimeSummary: '📊 ಸರ್ವಕಾಲಿಕ ಸಾರಾಂಶ',
+          totalIncome: 'ಒಟ್ಟು ಆದಾಯ',
+          totalExpense: 'ಒಟ್ಟು ಖರ್ಚು',
+          netProfit: 'ನಿವ್ವಳ ಲಾಭ',
+          avgDailyIncome: 'ಸರಾಸರಿ ದೈನಿಕ ಆದಾಯ',
+          avgDailyExpense: 'ಸರಾಸರಿ ದೈನಿಕ ಖರ್ಚು',
+          noDate: 'ದಿನಾಂಕವಿಲ್ಲ',
+          descPlaceholder: 'ಉದಾ. ಚಹಾ ಮಾರಾಟ, ಹಾಲು, ಸ್ಟಾಕ್...',
+          catSales: 'ಮಾರಾಟ',
+          catServices: 'ಸೇವೆಗಳು',
+          catOtherIncome: 'ಇತರ ಆದಾಯ',
+          catFoodBeverages: 'ಆಹಾರ ಮತ್ತು ಪಾನೀಯ',
+          catRawMaterials: 'ಕಚ್ಚಾ ವಸ್ತುಗಳು',
+          catUtilities: 'ಉಪಯುಕ್ತತೆಗಳು',
+          catTransport: 'ಸಾರಿಗೆ',
+          catSalary: 'ವೇತನ',
+          catRent: 'ಬಾಡಿಗೆ',
+          catMaintenance: 'ನಿರ್ವಹಣೆ',
+          catMarketing: 'ಮಾರುಕಟ್ಟೆ',
+          catMiscellaneous: 'ಇತರೆ',
+          goodNews: 'ಒಳ್ಳೆಯ ಸುದ್ದಿ!',
+          breakEven: 'ಸಮತೋಲನ.',
+          warning: 'ಎಚ್ಚರಿಕೆ:',
+          profitMsg: 'ನೀವು ಲಾಭದಲ್ಲಿದ್ದೀರಿ',
+          netProfitWord: 'ನಿವ್ವಳ ಲಾಭ.',
+          breakEvenMsg: 'ಆದಾಯ ಮತ್ತು ಖರ್ಚುಗಳು ಸಮತೋಲಿತವಾಗಿವೆ — ಧನಾತ್ಮಕ ಮಾರ್ಜಿನ್ ಗುರಿ ಮಾಡಿ.',
+          lossMsg: 'ನೀವು ನಷ್ಟದಲ್ಲಿ ನಡೆಯುತ್ತಿದ್ದೀರಿ',
+          immediateAction: 'ತಕ್ಷಣ ಕ್ರಮ ಅಗತ್ಯ!',
+          topExpense: 'ಅಗ್ರ ಖರ್ಚು:',
+          ofSpending: 'ಖರ್ಚಿನ',
+          concentratedSpending: 'ಇದು ಬಹಳ ಕೇಂದ್ರೀಕೃತ — ವೈವಿಧ್ಯಗೊಳಿಸಿ ಅಥವಾ ದರಗಳನ್ನು ಸಮಾಲೋಚಿಸಿ.',
+          wellDistributed: 'ಖರ್ಚು ಚೆನ್ನಾಗಿ ಹಂಚಿಕೆಯಾಗಿದೆ.',
+          rawMaterialsLabel: 'ಕಚ್ಚಾ ವಸ್ತುಗಳು:',
+          ofExpenses: 'ಖರ್ಚುಗಳ',
+          bulkPurchase: 'ಬೃಹತ್ ಖರೀದಿ ಅಥವಾ ಪರ್ಯಾಯ ಪೂರೈಕೆದಾರರನ್ನು ಹುಡುಕಿ.',
+          expenseRatio: 'ಖರ್ಚು ಅನುಪಾತ:',
+          criticallyHigh: 'ಅತ್ಯಂತ ಹೆಚ್ಚು! ಅನಗತ್ಯ ವೆಚ್ಚಗಳನ್ನು ತಕ್ಷಣ ಕಡಿಮೆ ಮಾಡಿ.',
+          marginsAreThin: 'ಮಾರ್ಜಿನ್ ಕಡಿಮೆ. ಖರ್ಚು ಕಡಿಮೆ ಮಾಡುವ ಕ್ಷೇತ್ರಗಳನ್ನು ಹುಡುಕಿ.',
+          healthyMargins: 'ಆರೋಗ್ಯಕರ ಮಾರ್ಜಿನ್! ಹೀಗೆಯೇ ಮುಂದುವರಿಸಿ.',
+          budgetLabel: 'ಬಜೆಟ್:',
+          overBudgetBy: 'ಬಜೆಟ್ ಮೀರಿದೆ',
+          ofLimit: 'ನ',
+          limit: 'ಮಿತಿ',
+          budgetUsed: 'ಬಳಕೆ',
+          remainingThisMonth: 'ಈ ತಿಂಗಳು ಉಳಿದಿದೆ.',
+          tip: 'ಸಲಹೆ:',
+          saveWord: 'ಉಳಿಸಿ',
+          ofProfitEmergency: '(ಲಾಭದ 20%) ತುರ್ತು ನಿಧಿಯಾಗಿ.',
+          entriesLabel: 'ನಮೂದುಗಳು:',
+          totalTransactions: 'ಒಟ್ಟು ವಹಿವಾಟುಗಳನ್ನು ಟ್ರ್ಯಾಕ್ ಮಾಡಲಾಗಿದೆ.',
+          addGeminiTip: 'ಸ್ಮಾರ್ಟ್ AI ಒಳನೋಟಗಳಿಗಾಗಿ ಸೆಟ್ಟಿಂಗ್‌ಗಳಲ್ಲಿ ನಿಮ್ಮ Gemini API ಕೀ ಸೇರಿಸಿ!',
+          deleteWord: 'ಅಳಿಸಿ',
+        },
+      };
+
+      const CATEGORY_I18N_MAP = {
+        'Sales': 'catSales',
+        'Services': 'catServices',
+        'Other Income': 'catOtherIncome',
+        'Food & Beverages': 'catFoodBeverages',
+        'Raw Materials': 'catRawMaterials',
+        'Utilities': 'catUtilities',
+        'Transport': 'catTransport',
+        'Salary': 'catSalary',
+        'Rent': 'catRent',
+        'Maintenance': 'catMaintenance',
+        'Marketing': 'catMarketing',
+        'Miscellaneous': 'catMiscellaneous',
+      };
+
+      let currentLang = localStorage.getItem('lang') || 'en';
+
+      function t(key) {
+        return (TRANSLATIONS[currentLang] && TRANSLATIONS[currentLang][key]) || TRANSLATIONS.en[key] || key;
+      }
+
+      function tCat(catName) {
+        const key = CATEGORY_I18N_MAP[catName];
+        return key ? t(key) : catName;
+      }
+
+      function applyLanguage() {
+        document.documentElement.lang = currentLang;
+        localStorage.setItem('lang', currentLang);
+
+        $('lang-label').textContent = LANG_CONFIG[currentLang].label;
+
+        document.querySelectorAll('.lang-option').forEach(btn => {
+          const lang = btn.getAttribute('data-lang');
+          if (lang === currentLang) {
+            btn.classList.add('bg-indigo-50', 'dark:bg-indigo-900/30', 'text-indigo-600', 'dark:text-indigo-400', 'font-medium');
+          } else {
+            btn.classList.remove('bg-indigo-50', 'dark:bg-indigo-900/30', 'text-indigo-600', 'dark:text-indigo-400', 'font-medium');
+          }
+        });
+
+        $('app-subtitle').textContent = t('appSubtitle');
+        $('edit-modal-title').textContent = t('editEntry');
+        $('edit-desc-label').textContent = t('description');
+        $('edit-amount-label').textContent = t('amount');
+        $('edit-type-label').textContent = t('type');
+        $('edit-cat-label').textContent = t('category');
+        $('edit-cancel-btn').textContent = t('cancel');
+        $('edit-save-btn').textContent = t('saveChanges');
+
+        $('card-income-label').textContent = t('income');
+        $('card-expense-label').textContent = t('expense');
+        $('card-profit-label').textContent = t('profit');
+
+        $('add-entry-heading').textContent = t('addEntry');
+        $('desc-label').textContent = t('description');
+        $('amount-label').textContent = t('amount');
+        $('type-label').textContent = t('type');
+        $('cat-label').textContent = t('category');
+        $('add-entry-btn').textContent = t('addEntry');
+        $('desc').placeholder = t('descPlaceholder');
+        $('search').placeholder = t('search');
+
+        $('ai-detecting-text').textContent = t('aiDetecting');
+
+        $('ledger-heading').textContent = t('ledger');
+        $('chart-bar-heading').textContent = t('dailyOverview');
+        $('chart-doughnut-heading').textContent = t('expenseCategories');
+        $('bar-chart-empty-text').textContent = t('addEntriesToSeeChart');
+        $('doughnut-chart-empty-text').textContent = t('addExpenseEntries');
+
+        $('reports-heading').textContent = t('reports');
+        $('tab-daily').textContent = t('daily');
+        $('tab-weekly').textContent = t('weekly');
+        $('tab-alltime').textContent = t('allTime');
+        $('report-empty-text').textContent = t('noDataReports');
+
+        $('ai-summary-btn-text').textContent = t('generateAISummary');
+        $('ai-summary-label').textContent = t('geminiAISummary');
+
+        $('settings-title').textContent = t('geminiSettings');
+        $('settings-desc').innerHTML = t('geminiDesc') + ' <a href="https://aistudio.google.com/apikey" target="_blank" class="text-indigo-600 dark:text-indigo-400 hover:underline">Google AI Studio</a>.';
+        $('save-key-btn').textContent = t('save');
+        $('backup-title').textContent = t('dataBackup');
+        $('backup-desc').textContent = t('backupDesc');
+        $('backup-btn-text').textContent = t('exportBackup');
+        $('restore-btn-text').textContent = t('importBackup');
+
+        $('budget-heading').textContent = t('monthlyBudget');
+        $('budget-label').textContent = t('budgetColon');
+        $('set-btn-text').textContent = t('set');
+        $('spent-label').textContent = t('spentThisMonth');
+        $('budget-label-2').textContent = t('budget');
+
+        updateSelectOptions($('type'), [
+          { value: 'income', text: '💵 ' + t('income') },
+          { value: 'expense', text: '🧾 ' + t('expense') },
+        ]);
+        updateSelectOptions($('edit-type'), [
+          { value: 'income', text: '💵 ' + t('income') },
+          { value: 'expense', text: '🧾 ' + t('expense') },
+        ]);
+
+        updateSelectOptions($('filter'), [
+          { value: 'all', text: t('all') },
+          { value: 'income', text: t('income') },
+          { value: 'expense', text: t('expense') },
+        ]);
+
+        updateCategorySelect($('category'));
+        updateCategorySelect($('edit-category'));
+      }
+
+      function updateSelectOptions(select, options) {
+        const currentValue = select.value;
+        select.innerHTML = '';
+        options.forEach(opt => {
+          const option = document.createElement('option');
+          option.value = opt.value;
+          option.textContent = opt.text;
+          select.appendChild(option);
+        });
+        select.value = currentValue;
+      }
+
+      function updateCategorySelect(select) {
+        const currentValue = select.value;
+        select.innerHTML = '';
+
+        const incomeGroup = document.createElement('optgroup');
+        incomeGroup.label = t('income');
+        INCOME_CATEGORIES.forEach(cat => {
+          const opt = document.createElement('option');
+          opt.value = cat;
+          opt.textContent = (CATEGORY_CONFIG[cat]?.emoji || '') + ' ' + tCat(cat);
+          incomeGroup.appendChild(opt);
+        });
+
+        const expenseGroup = document.createElement('optgroup');
+        expenseGroup.label = t('expense');
+        EXPENSE_CATEGORIES.forEach(cat => {
+          const opt = document.createElement('option');
+          opt.value = cat;
+          opt.textContent = (CATEGORY_CONFIG[cat]?.emoji || '') + ' ' + tCat(cat);
+          expenseGroup.appendChild(opt);
+        });
+
+        select.appendChild(incomeGroup);
+        select.appendChild(expenseGroup);
+        select.value = currentValue;
+      }
+
+      // --- Language Selector ---
+      $('lang-toggle').addEventListener('click', (e) => {
+        e.stopPropagation();
+        $('lang-dropdown').classList.toggle('hidden');
+      });
+
+      document.addEventListener('click', (e) => {
+        if (!$('lang-toggle').contains(e.target) && !$('lang-dropdown').contains(e.target)) {
+          $('lang-dropdown').classList.add('hidden');
+        }
+      });
+
+      document.querySelectorAll('.lang-option').forEach(btn => {
+        btn.addEventListener('click', () => {
+          currentLang = btn.getAttribute('data-lang');
+          applyLanguage();
+          render();
+          renderCharts();
+          renderReports();
+          renderBudget();
+          $('lang-dropdown').classList.add('hidden');
+        });
+      });
 
       const CATEGORY_CONFIG = {
         'Sales':            { emoji: '🛒', color: '#10b981', bg: '#d1fae5', darkBg: '#064e3b' },
@@ -474,13 +1035,15 @@
       }
 
       function formatDate(iso) {
+        const locale = currentLang === 'hi' ? 'hi-IN' : currentLang === 'kn' ? 'kn-IN' : 'en-IN';
         const d = new Date(iso);
-        return d.toLocaleDateString('en-IN', { day: 'numeric', month: 'short' }) +
-          ', ' + d.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' });
+        return d.toLocaleDateString(locale, { day: 'numeric', month: 'short' }) +
+          ', ' + d.toLocaleTimeString(locale, { hour: '2-digit', minute: '2-digit' });
       }
 
       function getDateLabel(iso) {
-        return new Date(iso).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', weekday: 'short' });
+        const locale = currentLang === 'hi' ? 'hi-IN' : currentLang === 'kn' ? 'kn-IN' : 'en-IN';
+        return new Date(iso).toLocaleDateString(locale, { day: 'numeric', month: 'short', weekday: 'short' });
       }
 
       function getWeekKey(iso) {
@@ -491,12 +1054,13 @@
       }
 
       function getWeekLabel(iso) {
+        const locale = currentLang === 'hi' ? 'hi-IN' : currentLang === 'kn' ? 'kn-IN' : 'en-IN';
         const d = new Date(iso);
         const start = new Date(d);
         start.setDate(d.getDate() - d.getDay());
         const end = new Date(start);
         end.setDate(start.getDate() + 6);
-        return start.toLocaleDateString('en-IN', { day: 'numeric', month: 'short' }) + ' – ' + end.toLocaleDateString('en-IN', { day: 'numeric', month: 'short' });
+        return start.toLocaleDateString(locale, { day: 'numeric', month: 'short' }) + ' – ' + end.toLocaleDateString(locale, { day: 'numeric', month: 'short' });
       }
 
       function isDark() { return darkMode; }
@@ -598,20 +1162,20 @@ Respond with ONLY the category name, nothing else.`;
         if (key) {
           apiKey = key;
           localStorage.setItem('gemini_api_key', key);
-          $('key-status').textContent = '✅ API key saved! AI features enabled.';
+          $('key-status').textContent = t('apiKeySavedMsg');
           $('key-status').className = 'mt-2 text-xs text-emerald-600 dark:text-emerald-400';
-          showToast('Gemini API key saved', 'income');
+          showToast(t('apiKeySaved'), 'income');
         } else {
           apiKey = '';
           localStorage.removeItem('gemini_api_key');
-          $('key-status').textContent = 'Key removed. Using keyword-based detection.';
+          $('key-status').textContent = t('keyRemoved');
           $('key-status').className = 'mt-2 text-xs text-slate-500';
         }
       });
 
       if (apiKey) {
         $('api-key-input').value = apiKey;
-        $('key-status').textContent = '✅ API key loaded.';
+        $('key-status').textContent = t('apiKeyLoaded');
         $('key-status').className = 'mt-2 text-xs text-emerald-600 dark:text-emerald-400';
       }
 
@@ -621,6 +1185,7 @@ Respond with ONLY the category name, nothing else.`;
           entries,
           budgetGoal,
           apiKey: apiKey || undefined,
+          lang: currentLang,
           exportedAt: new Date().toISOString(),
           version: 1,
         };
@@ -631,7 +1196,7 @@ Respond with ONLY the category name, nothing else.`;
         a.download = 'smart-khata-backup-' + new Date().toISOString().slice(0, 10) + '.json';
         a.click();
         URL.revokeObjectURL(url);
-        showToast('Backup exported!', 'income');
+        showToast(t('backupExported'), 'income');
       });
 
       $('restore-input').addEventListener('change', function() {
@@ -642,7 +1207,7 @@ Respond with ONLY the category name, nothing else.`;
           try {
             const data = JSON.parse(e.target.result);
             if (!data.entries || !Array.isArray(data.entries)) {
-              showToast('Invalid backup file', 'delete');
+              showToast(t('invalidBackup'), 'delete');
               return;
             }
             entries = data.entries.map((en, i) => ({
@@ -661,10 +1226,14 @@ Respond with ONLY the category name, nothing else.`;
               localStorage.setItem('gemini_api_key', apiKey);
               $('api-key-input').value = apiKey;
             }
+            if (data.lang) {
+              currentLang = data.lang;
+              applyLanguage();
+            }
             save();
-            showToast(`Restored ${entries.length} entries!`, 'income');
+            showToast(`${t('restored')} ${entries.length} ${t('entries')}!`, 'income');
           } catch (err) {
-            showToast('Failed to read backup file', 'delete');
+            showToast(t('failedReadBackup'), 'delete');
           }
         };
         reader.readAsText(file);
@@ -680,7 +1249,7 @@ Respond with ONLY the category name, nothing else.`;
           budgetGoal = val;
           localStorage.setItem('budget_goal', budgetGoal);
           renderBudget();
-          showToast('Budget goal set: ₹' + formatCurrency(budgetGoal), 'income');
+          showToast(t('budgetGoalSet') + ': ₹' + formatCurrency(budgetGoal), 'income');
         } else {
           budgetGoal = 0;
           localStorage.setItem('budget_goal', '0');
@@ -711,16 +1280,16 @@ Respond with ONLY the category name, nothing else.`;
             $('budget-bar').className = 'budget-bar h-full rounded-full bg-gradient-to-r from-emerald-500 to-emerald-400';
           }
 
-          $('budget-pct').textContent = Math.round(pct) + '% used';
+          $('budget-pct').textContent = Math.round(pct) + '% ' + t('used');
           $('budget-remaining').textContent = monthExpense > budgetGoal
-            ? '₹' + formatCurrency(monthExpense - budgetGoal) + ' over budget!'
-            : '₹' + formatCurrency(remaining) + ' remaining';
+            ? '₹' + formatCurrency(monthExpense - budgetGoal) + ' ' + t('overBudget')
+            : '₹' + formatCurrency(remaining) + ' ' + t('remaining');
           $('budget-remaining').className = monthExpense > budgetGoal
             ? 'text-xs font-semibold text-rose-600 dark:text-rose-400'
             : 'text-xs font-semibold text-emerald-600 dark:text-emerald-400';
         } else {
           $('budget-bar').style.width = '0%';
-          $('budget-pct').textContent = 'Set a budget to track';
+          $('budget-pct').textContent = t('setBudgetToTrack');
           $('budget-remaining').textContent = '';
         }
       }
@@ -793,7 +1362,7 @@ Respond with ONLY the category name, nothing else.`;
         const desc = $('edit-desc').value.trim();
         const amount = parseFloat($('edit-amount').value);
         if (!desc || !amount || amount <= 0) {
-          showToast('Please fill in all fields correctly', 'delete');
+          showToast(t('fillFieldsCorrectly'), 'delete');
           return;
         }
 
@@ -804,14 +1373,14 @@ Respond with ONLY the category name, nothing else.`;
 
         closeEditModal();
         save();
-        showToast('Entry updated', 'income');
+        showToast(t('entryUpdated'), 'income');
       });
 
       // --- Delete Entry ---
       function deleteEntry(id) {
         entries = entries.filter(e => e.id !== id);
         save();
-        showToast('Entry deleted', 'delete');
+        showToast(t('entryDeleted'), 'delete');
       }
 
       // --- Render Ledger ---
@@ -853,11 +1422,11 @@ Respond with ONLY the category name, nothing else.`;
         if (filtered.length === 0) {
           emptyState.classList.remove('hidden');
           if (entries.length > 0) {
-            emptyState.querySelector('p').textContent = 'No matching entries';
-            emptyState.querySelector('p:last-child').textContent = 'Try adjusting your search or filter';
+            $('empty-title').textContent = t('noMatchingEntries');
+            $('empty-subtitle').textContent = t('adjustSearch');
           } else {
-            emptyState.querySelector('p').textContent = 'No entries yet';
-            emptyState.querySelector('p:last-child').textContent = 'Add your first income or expense to get started';
+            $('empty-title').textContent = t('noEntriesYet');
+            $('empty-subtitle').textContent = t('addFirstEntry');
           }
         } else {
           emptyState.classList.add('hidden');
@@ -887,7 +1456,7 @@ Respond with ONLY the category name, nothing else.`;
 
           const dateEl = document.createElement('span');
           dateEl.className = 'text-xs text-slate-400';
-          dateEl.textContent = e.date ? formatDate(e.date) : 'No date';
+          dateEl.textContent = e.date ? formatDate(e.date) : t('noDate');
           metaRow.appendChild(dateEl);
 
           if (e.category) {
@@ -896,7 +1465,7 @@ Respond with ONLY the category name, nothing else.`;
             catBadge.className = 'text-xs px-1.5 py-0.5 rounded-md font-medium';
             catBadge.style.backgroundColor = isDark() ? catConf.darkBg : catConf.bg;
             catBadge.style.color = catConf.color;
-            catBadge.textContent = catConf.emoji + ' ' + e.category;
+            catBadge.textContent = catConf.emoji + ' ' + tCat(e.category);
             metaRow.appendChild(catBadge);
           }
 
@@ -916,13 +1485,13 @@ Respond with ONLY the category name, nothing else.`;
 
           const editBtn = document.createElement('button');
           editBtn.className = 'row-actions text-slate-300 dark:text-slate-600 hover:text-indigo-500 dark:hover:text-indigo-400 transition-colors p-1';
-          editBtn.title = 'Edit';
+          editBtn.title = t('editEntry');
           editBtn.innerHTML = '<svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>';
           editBtn.addEventListener('click', () => openEditModal(e.id));
 
           const deleteBtn = document.createElement('button');
           deleteBtn.className = 'row-actions text-slate-300 dark:text-slate-600 hover:text-rose-500 dark:hover:text-rose-400 transition-colors p-1';
-          deleteBtn.title = 'Delete';
+          deleteBtn.title = t('deleteWord');
           deleteBtn.innerHTML = '<svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>';
           deleteBtn.addEventListener('click', () => deleteEntry(e.id));
 
@@ -958,13 +1527,14 @@ Respond with ONLY the category name, nothing else.`;
         canvas.style.display = 'block';
         emptyEl.classList.add('hidden');
 
+        const locale = currentLang === 'hi' ? 'hi-IN' : currentLang === 'kn' ? 'kn-IN' : 'en-IN';
         const dayMap = {};
         const today = new Date();
         for (let i = 6; i >= 0; i--) {
           const d = new Date(today);
           d.setDate(today.getDate() - i);
           const key = d.toISOString().slice(0, 10);
-          dayMap[key] = { income: 0, expense: 0, label: d.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', weekday: 'short' }) };
+          dayMap[key] = { income: 0, expense: 0, label: d.toLocaleDateString(locale, { day: 'numeric', month: 'short', weekday: 'short' }) };
         }
 
         entries.forEach(e => {
@@ -988,14 +1558,14 @@ Respond with ONLY the category name, nothing else.`;
             labels,
             datasets: [
               {
-                label: 'Income',
+                label: t('income'),
                 data: incomeData,
                 backgroundColor: 'rgba(16, 185, 129, 0.8)',
                 borderRadius: 6,
                 borderSkipped: false,
               },
               {
-                label: 'Expense',
+                label: t('expense'),
                 data: expenseData,
                 backgroundColor: 'rgba(244, 63, 94, 0.8)',
                 borderRadius: 6,
@@ -1056,7 +1626,7 @@ Respond with ONLY the category name, nothing else.`;
         const sorted = Object.entries(catTotals).sort((a, b) => b[1] - a[1]);
         const labels = sorted.map(([cat]) => {
           const conf = CATEGORY_CONFIG[cat] || CATEGORY_CONFIG['Miscellaneous'];
-          return conf.emoji + ' ' + cat;
+          return conf.emoji + ' ' + tCat(cat);
         });
         const data = sorted.map(([, val]) => val);
         const colors = sorted.map(([cat]) => (CATEGORY_CONFIG[cat] || CATEGORY_CONFIG['Miscellaneous']).color);
@@ -1145,7 +1715,7 @@ Respond with ONLY the category name, nothing else.`;
           .slice(0, limit)
           .map(([cat, amt]) => {
             const conf = CATEGORY_CONFIG[cat] || CATEGORY_CONFIG['Miscellaneous'];
-            return `<span class="inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-md font-medium" style="background:${isDark() ? conf.darkBg : conf.bg};color:${conf.color}">${conf.emoji} ${safeCatLabel(cat)} ₹${formatCurrency(amt)}</span>`;
+            return `<span class="inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-md font-medium" style="background:${isDark() ? conf.darkBg : conf.bg};color:${conf.color}">${conf.emoji} ${safeCatLabel(tCat(cat))} ₹${formatCurrency(amt)}</span>`;
           }).join(' ');
       }
 
@@ -1162,18 +1732,20 @@ Respond with ONLY the category name, nothing else.`;
         });
         const profit = inc - exp;
 
+        const locale = currentLang === 'hi' ? 'hi-IN' : currentLang === 'kn' ? 'kn-IN' : 'en-IN';
         const validDates = entries.map(e => new Date(e.date)).filter(d => !isNaN(d)).sort((a, b) => a - b);
-        const firstDate = validDates.length > 0 ? validDates[0].toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }) : '—';
-        const lastDate = validDates.length > 0 ? validDates[validDates.length - 1].toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }) : '—';
+        const firstDate = validDates.length > 0 ? validDates[0].toLocaleDateString(locale, { day: 'numeric', month: 'short', year: 'numeric' }) : '—';
+        const lastDate = validDates.length > 0 ? validDates[validDates.length - 1].toLocaleDateString(locale, { day: 'numeric', month: 'short', year: 'numeric' }) : '—';
 
         const incomeDays = new Set();
         const expenseDays = new Set();
         entries.forEach(e => {
-          try {
-            const key = new Date(e.date).toISOString().slice(0, 10);
+          const d = new Date(e.date);
+          if (!isNaN(d)) {
+            const key = d.toISOString().slice(0, 10);
             if (e.type === 'income') incomeDays.add(key);
             else expenseDays.add(key);
-          } catch (_) { /* skip invalid dates */ }
+          }
         });
         const avgDailyIncome = formatCurrency(inc / Math.max(1, incomeDays.size));
         const avgDailyExpense = formatCurrency(exp / Math.max(1, expenseDays.size));
@@ -1184,31 +1756,31 @@ Respond with ONLY the category name, nothing else.`;
         card.className = 'border border-slate-100 dark:border-slate-700 rounded-xl p-5 fade-in';
         card.innerHTML = `
           <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-3">
-            <span class="font-semibold text-sm">📊 All Time Summary</span>
-            <span class="text-xs text-slate-400">${firstDate} — ${lastDate} · ${entries.length} entries</span>
+            <span class="font-semibold text-sm">${t('allTimeSummary')}</span>
+            <span class="text-xs text-slate-400">${firstDate} — ${lastDate} · ${entries.length} ${t('entries')}</span>
           </div>
           <div class="grid grid-cols-3 gap-4 mb-3">
             <div class="text-center">
-              <p class="text-xs text-slate-400 mb-0.5">Total Income</p>
+              <p class="text-xs text-slate-400 mb-0.5">${t('totalIncome')}</p>
               <p class="text-lg font-bold text-emerald-600 dark:text-emerald-400">₹${formatCurrency(inc)}</p>
             </div>
             <div class="text-center">
-              <p class="text-xs text-slate-400 mb-0.5">Total Expense</p>
+              <p class="text-xs text-slate-400 mb-0.5">${t('totalExpense')}</p>
               <p class="text-lg font-bold text-rose-600 dark:text-rose-400">₹${formatCurrency(exp)}</p>
             </div>
             <div class="text-center">
-              <p class="text-xs text-slate-400 mb-0.5">Net Profit</p>
+              <p class="text-xs text-slate-400 mb-0.5">${t('netProfit')}</p>
               <p class="text-lg font-bold ${profit >= 0 ? 'text-indigo-600 dark:text-indigo-400' : 'text-rose-600 dark:text-rose-400'}">${profit < 0 ? '-' : ''}₹${formatCurrency(Math.abs(profit))}</p>
             </div>
           </div>
           ${entries.length > 0 ? `
           <div class="grid grid-cols-2 gap-3 mb-3 text-sm">
             <div class="bg-slate-50 dark:bg-slate-700/50 rounded-lg p-3 text-center">
-              <p class="text-xs text-slate-400 mb-1">Avg Daily Income</p>
+              <p class="text-xs text-slate-400 mb-1">${t('avgDailyIncome')}</p>
               <p class="font-semibold text-emerald-600 dark:text-emerald-400">₹${avgDailyIncome}</p>
             </div>
             <div class="bg-slate-50 dark:bg-slate-700/50 rounded-lg p-3 text-center">
-              <p class="text-xs text-slate-400 mb-1">Avg Daily Expense</p>
+              <p class="text-xs text-slate-400 mb-1">${t('avgDailyExpense')}</p>
               <p class="font-semibold text-rose-600 dark:text-rose-400">₹${avgDailyExpense}</p>
             </div>
           </div>` : ''}
@@ -1238,19 +1810,19 @@ Respond with ONLY the category name, nothing else.`;
         card.innerHTML = `
           <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-2">
             <span class="font-semibold text-sm">${group.label}</span>
-            <span class="text-xs text-slate-400">${group.entries.length} entries</span>
+            <span class="text-xs text-slate-400">${group.entries.length} ${t('entries')}</span>
           </div>
           <div class="grid grid-cols-3 gap-3 mb-2">
             <div class="text-center">
-              <p class="text-xs text-slate-400 mb-0.5">Income</p>
+              <p class="text-xs text-slate-400 mb-0.5">${t('income')}</p>
               <p class="text-sm font-bold text-emerald-600 dark:text-emerald-400">₹${formatCurrency(inc)}</p>
             </div>
             <div class="text-center">
-              <p class="text-xs text-slate-400 mb-0.5">Expense</p>
+              <p class="text-xs text-slate-400 mb-0.5">${t('expense')}</p>
               <p class="text-sm font-bold text-rose-600 dark:text-rose-400">₹${formatCurrency(exp)}</p>
             </div>
             <div class="text-center">
-              <p class="text-xs text-slate-400 mb-0.5">Profit</p>
+              <p class="text-xs text-slate-400 mb-0.5">${t('profit')}</p>
               <p class="text-sm font-bold ${profit >= 0 ? 'text-indigo-600 dark:text-indigo-400' : 'text-rose-600 dark:text-rose-400'}">${profit < 0 ? '-' : ''}₹${formatCurrency(Math.abs(profit))}</p>
             </div>
           </div>
@@ -1282,12 +1854,12 @@ Respond with ONLY the category name, nothing else.`;
         const outputText = $('ai-summary-text');
 
         if (entries.length === 0) {
-          showToast('Add some entries first', 'delete');
+          showToast(t('addSomeEntries'), 'delete');
           return;
         }
 
         btn.disabled = true;
-        btn.innerHTML = '<span class="spinner inline-block w-4 h-4 border-2 border-white border-t-transparent rounded-full"></span> Generating...';
+        btn.innerHTML = '<span class="spinner inline-block w-4 h-4 border-2 border-white border-t-transparent rounded-full"></span> ' + t('generating');
 
         const totalIncome = entries.filter(e => e.type === 'income').reduce((s, e) => s + e.amount, 0);
         const totalExpense = entries.filter(e => e.type === 'expense').reduce((s, e) => s + e.amount, 0);
@@ -1317,6 +1889,12 @@ Respond with ONLY the category name, nothing else.`;
         const periodLabel = reportMode === 'alltime' ? 'all-time' : reportMode;
         const budgetInfo = budgetGoal > 0 ? `\nMonthly Budget: ₹${budgetGoal}` : '';
 
+        const langInstruction = currentLang === 'hi'
+          ? '\n\nIMPORTANT: Respond entirely in Hindi (हिन्दी).'
+          : currentLang === 'kn'
+            ? '\n\nIMPORTANT: Respond entirely in Kannada (ಕನ್ನಡ).'
+            : '';
+
         if (apiKey) {
           const prompt = `You are a smart financial advisor for a small Indian shop owner. Analyze this ${periodLabel} financial data and give actionable business advice.
 
@@ -1339,7 +1917,7 @@ Provide a concise ${periodLabel} report in 4-5 bullet points covering:
 4. Specific actionable tip to improve profit
 5. ${budgetGoal > 0 ? 'Budget adherence analysis' : 'One smart saving or investment suggestion'}
 
-Use emojis and keep it friendly. Format each point on a new line starting with an emoji bullet.`;
+Use emojis and keep it friendly. Format each point on a new line starting with an emoji bullet.${langInstruction}`;
 
           try {
             const result = await callGemini(prompt);
@@ -1358,7 +1936,7 @@ Use emojis and keep it friendly. Format each point on a new line starting with a
 
         outputWrap.classList.remove('hidden');
         btn.disabled = false;
-        btn.innerHTML = '<span>✨</span> Generate AI Summary';
+        btn.innerHTML = '<span>✨</span> <span id="ai-summary-btn-text">' + t('generateAISummary') + '</span>';
       });
 
       function generateLocalSummary(totalIncome, totalExpense, profit, catBreakdown) {
@@ -1369,29 +1947,29 @@ Use emojis and keep it friendly. Format each point on a new line starting with a
         let lines = [];
 
         if (profit > 0) {
-          lines.push(`📈 <b>Good news!</b> You're profitable with ₹${formatCurrency(profit)} net profit.`);
+          lines.push(`📈 <b>${t('goodNews')}</b> ${t('profitMsg')} ₹${formatCurrency(profit)} ${t('netProfitWord')}`);
         } else if (profit === 0) {
-          lines.push(`⚖️ <b>Break even.</b> Income and expenses are balanced — aim for positive margins.`);
+          lines.push(`⚖️ <b>${t('breakEven')}</b> ${t('breakEvenMsg')}`);
         } else {
-          lines.push(`📉 <b>Warning:</b> You're running at a loss of ₹${formatCurrency(Math.abs(profit))}. Immediate action needed!`);
+          lines.push(`📉 <b>${t('warning')}</b> ${t('lossMsg')} ₹${formatCurrency(Math.abs(profit))}. ${t('immediateAction')}`);
         }
 
         if (topCat) {
           const pct = Math.round((topCat[1] / totalExpense) * 100);
-          lines.push(`🏷️ <b>Top expense:</b> ${topCat[0]} at ₹${formatCurrency(topCat[1])} (${pct}% of spending). ${pct > 50 ? 'This is very concentrated — diversify or negotiate rates.' : 'Spending is well-distributed.'}`);
+          lines.push(`🏷️ <b>${t('topExpense')}</b> ${tCat(topCat[0])} — ₹${formatCurrency(topCat[1])} (${pct}% ${t('ofSpending')}). ${pct > 50 ? t('concentratedSpending') : t('wellDistributed')}`);
         }
 
         const rawMat = catBreakdown['Raw Materials'];
         if (rawMat && rawMat > totalExpense * 0.3) {
-          lines.push(`📦 <b>Raw Materials:</b> ₹${formatCurrency(rawMat)} (${Math.round((rawMat/totalExpense)*100)}% of expenses). Consider bulk purchasing or finding alternative suppliers.`);
+          lines.push(`📦 <b>${t('rawMaterialsLabel')}</b> ₹${formatCurrency(rawMat)} (${Math.round((rawMat/totalExpense)*100)}% ${t('ofExpenses')}). ${t('bulkPurchase')}`);
         }
 
         if (ratio > 0.85) {
-          lines.push(`🚨 <b>Expense ratio:</b> ${Math.round(ratio * 100)}% — critically high! Cut non-essential costs immediately.`);
+          lines.push(`🚨 <b>${t('expenseRatio')}</b> ${Math.round(ratio * 100)}% — ${t('criticallyHigh')}`);
         } else if (ratio > 0.7) {
-          lines.push(`⚠️ <b>Expense ratio:</b> ${Math.round(ratio * 100)}% — margins are thin. Look for areas to reduce spending.`);
+          lines.push(`⚠️ <b>${t('expenseRatio')}</b> ${Math.round(ratio * 100)}% — ${t('marginsAreThin')}`);
         } else {
-          lines.push(`✅ <b>Expense ratio:</b> ${Math.round(ratio * 100)}% — healthy margins! Keep this up.`);
+          lines.push(`✅ <b>${t('expenseRatio')}</b> ${Math.round(ratio * 100)}% — ${t('healthyMargins')}`);
         }
 
         if (budgetGoal > 0) {
@@ -1400,15 +1978,15 @@ Use emojis and keep it friendly. Format each point on a new line starting with a
           const monthExp = entries.filter(e => e.type === 'expense' && new Date(e.date) >= monthStart).reduce((s, e) => s + e.amount, 0);
           const budgetPct = Math.round((monthExp / budgetGoal) * 100);
           if (monthExp > budgetGoal) {
-            lines.push(`🎯 <b>Budget:</b> Over budget by ₹${formatCurrency(monthExp - budgetGoal)} (${budgetPct}% of ₹${formatCurrency(budgetGoal)} limit)!`);
+            lines.push(`🎯 <b>${t('budgetLabel')}</b> ${t('overBudgetBy')} ₹${formatCurrency(monthExp - budgetGoal)} (${budgetPct}% ${t('ofLimit')} ₹${formatCurrency(budgetGoal)} ${t('limit')})!`);
           } else {
-            lines.push(`🎯 <b>Budget:</b> ${budgetPct}% used — ₹${formatCurrency(budgetGoal - monthExp)} remaining this month.`);
+            lines.push(`🎯 <b>${t('budgetLabel')}</b> ${budgetPct}% ${t('budgetUsed')} — ₹${formatCurrency(budgetGoal - monthExp)} ${t('remainingThisMonth')}`);
           }
         } else if (profit > 0) {
-          lines.push(`💡 <b>Tip:</b> Save ₹${formatCurrency(profit * 0.2)} (20% of profit) as an emergency fund.`);
+          lines.push(`💡 <b>${t('tip')}</b> ${t('saveWord')} ₹${formatCurrency(profit * 0.2)} ${t('ofProfitEmergency')}`);
         }
 
-        lines.push(`📊 <b>Entries:</b> ${entries.length} total transactions tracked. ${!apiKey ? '<br><span class="text-indigo-500 dark:text-indigo-400">💡 Add your Gemini API key in settings for smarter AI-powered insights!</span>' : ''}`);
+        lines.push(`📊 <b>${t('entriesLabel')}</b> ${entries.length} ${t('totalTransactions')} ${!apiKey ? '<br><span class="text-indigo-500 dark:text-indigo-400">💡 ' + t('addGeminiTip') + '</span>' : ''}`);
 
         return lines.join('<br><br>');
       }
@@ -1420,7 +1998,7 @@ Use emojis and keep it friendly. Format each point on a new line starting with a
       // --- CSV Export ---
       $('export-btn').addEventListener('click', function() {
         if (entries.length === 0) {
-          showToast('Nothing to export', 'delete');
+          showToast(t('nothingToExport'), 'delete');
           return;
         }
         const header = 'Date,Description,Type,Category,Amount';
@@ -1437,7 +2015,7 @@ Use emojis and keep it friendly. Format each point on a new line starting with a
         a.download = 'smart-khata-' + new Date().toISOString().slice(0, 10) + '.csv';
         a.click();
         URL.revokeObjectURL(url);
-        showToast('CSV exported!', 'income');
+        showToast(t('csvExported'), 'income');
       });
 
       // --- Remove error styling on input ---
@@ -1451,8 +2029,12 @@ Use emojis and keep it friendly. Format each point on a new line starting with a
         date: e.date || new Date().toISOString(),
         category: e.category || detectCategoryByKeywords(e.desc, e.type),
       }));
+
+      // --- Init ---
+      applyLanguage();
       save();
     })();
   </script>
 </body>
 </html>
+
