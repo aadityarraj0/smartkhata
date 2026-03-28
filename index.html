@@ -1,0 +1,1458 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Smart Khata - HackFest MVP</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: { sans: ['Inter', 'system-ui', 'sans-serif'] },
+        }
+      }
+    }
+  </script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+
+    .shake { animation: shake 0.4s ease-in-out; }
+    @keyframes shake {
+      0%, 100% { transform: translateX(0); }
+      25% { transform: translateX(-6px); }
+      75% { transform: translateX(6px); }
+    }
+
+    .toast-enter { animation: slideUp 0.3s ease-out; }
+    .toast-exit { animation: slideDown 0.3s ease-in forwards; }
+    @keyframes slideUp {
+      from { transform: translateY(100%); opacity: 0; }
+      to { transform: translateY(0); opacity: 1; }
+    }
+    @keyframes slideDown {
+      from { transform: translateY(0); opacity: 1; }
+      to { transform: translateY(100%); opacity: 0; }
+    }
+
+    .fade-in { animation: fadeIn 0.3s ease-out; }
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(8px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .ledger-row { transition: background-color 0.15s, opacity 0.15s; }
+    .ledger-row:hover { background-color: #f9fafb; }
+    .dark .ledger-row:hover { background-color: #1e293b; }
+    .ledger-row:hover .row-actions { opacity: 1; }
+    .row-actions { opacity: 0; transition: opacity 0.15s, color 0.15s; }
+
+    input:focus, select:focus, textarea:focus { outline: none; box-shadow: 0 0 0 3px rgba(99,102,241,0.2); border-color: #6366f1; }
+    input[type="number"]::-webkit-inner-spin-button,
+    input[type="number"]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
+    input[type="number"] { -moz-appearance: textfield; }
+    .input-error { border-color: #ef4444 !important; box-shadow: 0 0 0 3px rgba(239,68,68,0.15) !important; }
+
+    .spinner { animation: spin 1s linear infinite; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    .typing-dots::after {
+      content: '';
+      animation: dots 1.5s steps(4, end) infinite;
+    }
+    @keyframes dots {
+      0% { content: ''; }
+      25% { content: '.'; }
+      50% { content: '..'; }
+      75% { content: '...'; }
+    }
+
+    .modal-backdrop { background: rgba(0,0,0,0.4); backdrop-filter: blur(4px); }
+    .dark .modal-backdrop { background: rgba(0,0,0,0.6); }
+
+    .budget-bar { transition: width 0.5s ease-out; }
+  </style>
+</head>
+<body class="bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-950 min-h-screen font-sans text-slate-900 dark:text-slate-100 transition-colors duration-300">
+
+  <div id="toast-container" class="fixed bottom-6 right-6 z-50 flex flex-col gap-2"></div>
+
+  <!-- Edit Modal -->
+  <div id="edit-modal" class="fixed inset-0 z-40 hidden">
+    <div class="modal-backdrop absolute inset-0" id="edit-modal-backdrop"></div>
+    <div class="relative z-50 flex items-center justify-center min-h-screen p-4">
+      <div class="bg-white dark:bg-slate-800 rounded-2xl shadow-xl border border-slate-200 dark:border-slate-700 p-6 w-full max-w-md fade-in">
+        <div class="flex items-center justify-between mb-5">
+          <h3 class="text-lg font-bold text-slate-800 dark:text-slate-100">Edit Entry</h3>
+          <button id="edit-modal-close" class="p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors text-slate-400">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+          </button>
+        </div>
+        <form id="edit-form" class="space-y-4">
+          <input type="hidden" id="edit-id" />
+          <div>
+            <label class="block text-sm font-medium text-slate-600 dark:text-slate-400 mb-1.5">Description</label>
+            <input id="edit-desc" class="w-full border border-slate-200 dark:border-slate-600 dark:bg-slate-700 rounded-xl p-3 text-sm transition-all placeholder:text-slate-400" />
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-slate-600 dark:text-slate-400 mb-1.5">Amount (₹)</label>
+            <input id="edit-amount" type="number" min="0" step="0.01" class="w-full border border-slate-200 dark:border-slate-600 dark:bg-slate-700 rounded-xl p-3 text-sm transition-all" />
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-slate-600 dark:text-slate-400 mb-1.5">Type</label>
+            <select id="edit-type" class="w-full border border-slate-200 dark:border-slate-600 dark:bg-slate-700 rounded-xl p-3 text-sm transition-all">
+              <option value="income">💵 Income</option>
+              <option value="expense">🧾 Expense</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-slate-600 dark:text-slate-400 mb-1.5">Category</label>
+            <select id="edit-category" class="w-full border border-slate-200 dark:border-slate-600 dark:bg-slate-700 rounded-xl p-3 text-sm transition-all">
+              <optgroup label="Income">
+                <option value="Sales">🛒 Sales</option>
+                <option value="Services">🔧 Services</option>
+                <option value="Other Income">💰 Other Income</option>
+              </optgroup>
+              <optgroup label="Expense">
+                <option value="Food & Beverages">🍵 Food & Beverages</option>
+                <option value="Raw Materials">📦 Raw Materials</option>
+                <option value="Utilities">💡 Utilities</option>
+                <option value="Transport">🚗 Transport</option>
+                <option value="Salary">👥 Salary</option>
+                <option value="Rent">🏠 Rent</option>
+                <option value="Maintenance">🔨 Maintenance</option>
+                <option value="Marketing">📢 Marketing</option>
+                <option value="Miscellaneous">📋 Miscellaneous</option>
+              </optgroup>
+            </select>
+          </div>
+          <div class="flex gap-3 pt-2">
+            <button type="button" id="edit-cancel-btn" class="flex-1 px-4 py-3 border border-slate-200 dark:border-slate-600 rounded-xl text-sm font-semibold text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700 transition-all">Cancel</button>
+            <button type="submit" class="flex-1 px-4 py-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-sm font-semibold transition-all active:scale-[0.98]">Save Changes</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <div class="max-w-6xl mx-auto px-4 py-8 sm:px-6 lg:px-8">
+
+    <!-- Header -->
+    <div class="mb-8 flex items-start justify-between">
+      <div>
+        <div class="flex items-center gap-3 mb-1">
+          <span class="text-4xl">💰</span>
+          <h1 class="text-3xl sm:text-4xl font-extrabold tracking-tight">Smart Khata</h1>
+        </div>
+        <p class="text-slate-500 dark:text-slate-400 ml-14">Daily income &amp; expense tracker for small shops</p>
+      </div>
+      <div class="flex items-center gap-2 mt-2">
+        <!-- Dark Mode Toggle -->
+        <button id="theme-toggle" class="p-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 transition-all text-slate-500 dark:text-slate-400" title="Toggle theme">
+          <svg id="theme-icon-light" class="w-5 h-5 hidden" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"/></svg>
+          <svg id="theme-icon-dark" class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"/></svg>
+        </button>
+        <!-- Settings Toggle -->
+        <button id="settings-toggle" class="p-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 transition-all text-slate-500 dark:text-slate-400" title="Settings">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.066 2.573c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.573 1.066c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.066-2.573c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><circle cx="12" cy="12" r="3"/></svg>
+        </button>
+      </div>
+    </div>
+
+    <!-- Settings Panel -->
+    <div id="settings-panel" class="hidden mb-6 bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 p-5 fade-in">
+      <div class="flex items-center gap-2 mb-3">
+        <span class="text-lg">🔑</span>
+        <h3 class="font-bold">Gemini AI Settings</h3>
+      </div>
+      <p class="text-sm text-slate-500 dark:text-slate-400 mb-3">Enter your Google Gemini API key to enable AI-powered category detection and smart summaries. Get a free key from <a href="https://aistudio.google.com/apikey" target="_blank" class="text-indigo-600 dark:text-indigo-400 hover:underline">Google AI Studio</a>.</p>
+      <div class="flex gap-2">
+        <input id="api-key-input" type="password" class="flex-1 border border-slate-200 dark:border-slate-600 dark:bg-slate-700 rounded-xl p-3 text-sm transition-all placeholder:text-slate-400" placeholder="AIzaSy..." />
+        <button id="save-key-btn" class="px-5 py-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-sm font-semibold transition-all active:scale-[0.98]">Save</button>
+      </div>
+      <div id="key-status" class="mt-2 text-xs"></div>
+
+      <!-- Data Backup / Restore -->
+      <div class="mt-5 pt-5 border-t border-slate-100 dark:border-slate-700">
+        <div class="flex items-center gap-2 mb-3">
+          <span class="text-lg">💾</span>
+          <h3 class="font-bold">Data Backup &amp; Restore</h3>
+        </div>
+        <p class="text-sm text-slate-500 dark:text-slate-400 mb-3">Export all your entries and settings as a JSON file, or restore from a previous backup.</p>
+        <div class="flex gap-2">
+          <button id="backup-btn" class="flex-1 px-4 py-2.5 border border-slate-200 dark:border-slate-600 rounded-xl text-sm font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 transition-all flex items-center justify-center gap-2">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+            Export Backup
+          </button>
+          <label class="flex-1 px-4 py-2.5 border border-slate-200 dark:border-slate-600 rounded-xl text-sm font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 transition-all flex items-center justify-center gap-2 cursor-pointer">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/></svg>
+            Import Backup
+            <input type="file" id="restore-input" accept=".json" class="hidden" />
+          </label>
+        </div>
+      </div>
+    </div>
+
+    <!-- Budget Goals -->
+    <div class="mb-8 bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 p-5">
+      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
+        <div class="flex items-center gap-2">
+          <span class="text-lg">🎯</span>
+          <h3 class="font-bold">Monthly Budget Goal</h3>
+        </div>
+        <div class="flex items-center gap-2">
+          <span class="text-sm text-slate-500 dark:text-slate-400">Budget: ₹</span>
+          <input id="budget-input" type="number" min="0" step="100" class="w-28 border border-slate-200 dark:border-slate-600 dark:bg-slate-700 rounded-lg px-3 py-1.5 text-sm transition-all" placeholder="10000" />
+          <button id="save-budget-btn" class="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-xs font-semibold transition-all">Set</button>
+        </div>
+      </div>
+      <div id="budget-display">
+        <div class="flex items-center justify-between text-sm mb-2">
+          <span class="text-slate-600 dark:text-slate-400">Spent this month: <span id="budget-spent" class="font-semibold text-rose-600 dark:text-rose-400">₹0</span></span>
+          <span class="text-slate-600 dark:text-slate-400">Budget: <span id="budget-limit" class="font-semibold">₹0</span></span>
+        </div>
+        <div class="w-full bg-slate-100 dark:bg-slate-700 rounded-full h-3 overflow-hidden">
+          <div id="budget-bar" class="budget-bar h-full rounded-full bg-gradient-to-r from-emerald-500 to-emerald-400" style="width: 0%"></div>
+        </div>
+        <div class="flex items-center justify-between mt-2">
+          <span id="budget-pct" class="text-xs font-semibold text-slate-500 dark:text-slate-400">0% used</span>
+          <span id="budget-remaining" class="text-xs font-semibold text-emerald-600 dark:text-emerald-400">₹0 remaining</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Summary Cards -->
+    <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
+      <div class="bg-gradient-to-br from-emerald-500 to-emerald-600 rounded-2xl shadow-lg shadow-emerald-500/20 p-5 text-white transition-transform hover:scale-[1.02]">
+        <div class="flex items-center gap-2 mb-1">
+          <svg class="w-5 h-5 opacity-80" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/></svg>
+          <span class="text-sm font-medium opacity-90">Income</span>
+        </div>
+        <p class="text-2xl sm:text-3xl font-bold">₹<span id="income">0</span></p>
+      </div>
+      <div class="bg-gradient-to-br from-rose-500 to-rose-600 rounded-2xl shadow-lg shadow-rose-500/20 p-5 text-white transition-transform hover:scale-[1.02]">
+        <div class="flex items-center gap-2 mb-1">
+          <svg class="w-5 h-5 opacity-80" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M20 12H4"/></svg>
+          <span class="text-sm font-medium opacity-90">Expense</span>
+        </div>
+        <p class="text-2xl sm:text-3xl font-bold">₹<span id="expense">0</span></p>
+      </div>
+      <div id="profit-card" class="bg-gradient-to-br from-indigo-500 to-indigo-600 rounded-2xl shadow-lg shadow-indigo-500/20 p-5 text-white transition-transform hover:scale-[1.02]">
+        <div class="flex items-center gap-2 mb-1">
+          <svg class="w-5 h-5 opacity-80" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"/></svg>
+          <span class="text-sm font-medium opacity-90">Profit</span>
+        </div>
+        <p class="text-2xl sm:text-3xl font-bold">₹<span id="profit">0</span></p>
+      </div>
+    </div>
+
+    <div class="grid md:grid-cols-5 gap-6 mb-8">
+
+      <!-- Add Entry Form -->
+      <div class="md:col-span-2">
+        <div class="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 p-6 sticky top-6">
+          <h2 class="text-lg font-bold mb-5">Add Entry</h2>
+          <form id="entry-form" class="space-y-4">
+            <div>
+              <label for="desc" class="block text-sm font-medium text-slate-600 dark:text-slate-400 mb-1.5">Description</label>
+              <input id="desc" class="w-full border border-slate-200 dark:border-slate-600 dark:bg-slate-700 rounded-xl p-3 text-sm transition-all placeholder:text-slate-400" placeholder="e.g. tea sales, milk, stock..." />
+            </div>
+            <div>
+              <label for="amount" class="block text-sm font-medium text-slate-600 dark:text-slate-400 mb-1.5">Amount (₹)</label>
+              <input id="amount" type="number" min="0" step="0.01" class="w-full border border-slate-200 dark:border-slate-600 dark:bg-slate-700 rounded-xl p-3 text-sm transition-all placeholder:text-slate-400" placeholder="0.00" />
+            </div>
+            <div>
+              <label for="type" class="block text-sm font-medium text-slate-600 dark:text-slate-400 mb-1.5">Type</label>
+              <select id="type" class="w-full border border-slate-200 dark:border-slate-600 dark:bg-slate-700 rounded-xl p-3 text-sm transition-all">
+                <option value="income">💵 Income</option>
+                <option value="expense">🧾 Expense</option>
+              </select>
+            </div>
+            <div>
+              <div class="flex items-center justify-between mb-1.5">
+                <label for="category" class="block text-sm font-medium text-slate-600 dark:text-slate-400">Category</label>
+                <span id="ai-detecting" class="text-xs text-indigo-500 hidden">✨ AI detecting<span class="typing-dots"></span></span>
+              </div>
+              <select id="category" class="w-full border border-slate-200 dark:border-slate-600 dark:bg-slate-700 rounded-xl p-3 text-sm transition-all">
+                <optgroup label="Income">
+                  <option value="Sales">🛒 Sales</option>
+                  <option value="Services">🔧 Services</option>
+                  <option value="Other Income">💰 Other Income</option>
+                </optgroup>
+                <optgroup label="Expense">
+                  <option value="Food & Beverages">🍵 Food & Beverages</option>
+                  <option value="Raw Materials">📦 Raw Materials</option>
+                  <option value="Utilities">💡 Utilities</option>
+                  <option value="Transport">🚗 Transport</option>
+                  <option value="Salary">👥 Salary</option>
+                  <option value="Rent">🏠 Rent</option>
+                  <option value="Maintenance">🔨 Maintenance</option>
+                  <option value="Marketing">📢 Marketing</option>
+                  <option value="Miscellaneous">📋 Miscellaneous</option>
+                </optgroup>
+              </select>
+            </div>
+            <button type="submit" class="w-full bg-slate-900 dark:bg-indigo-600 hover:bg-slate-800 dark:hover:bg-indigo-700 active:scale-[0.98] text-white rounded-xl p-3 font-semibold text-sm transition-all">
+              Add Entry
+            </button>
+          </form>
+        </div>
+      </div>
+
+      <!-- Ledger -->
+      <div class="md:col-span-3">
+        <div class="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 p-6">
+          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-5">
+            <h2 class="text-lg font-bold">Ledger</h2>
+            <div class="flex items-center gap-2">
+              <div class="relative flex-1 sm:flex-none">
+                <svg class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+                <input id="search" class="w-full sm:w-48 border border-slate-200 dark:border-slate-600 dark:bg-slate-700 rounded-lg pl-9 pr-3 py-2 text-sm transition-all placeholder:text-slate-400" placeholder="Search..." />
+              </div>
+              <select id="filter" class="border border-slate-200 dark:border-slate-600 dark:bg-slate-700 rounded-lg px-3 py-2 text-sm transition-all">
+                <option value="all">All</option>
+                <option value="income">Income</option>
+                <option value="expense">Expense</option>
+              </select>
+              <button id="export-btn" title="Export CSV" class="p-2 border border-slate-200 dark:border-slate-600 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-700 transition-all text-slate-500 dark:text-slate-400">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 10v6m0 0l-3-3m3 3l3-3M3 17V7a2 2 0 012-2h6l2 2h6a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2z"/></svg>
+              </button>
+            </div>
+          </div>
+
+          <div id="ledger" class="divide-y divide-slate-100 dark:divide-slate-700"></div>
+
+          <div id="empty-state" class="text-center py-12 hidden">
+            <div class="text-5xl mb-3">📒</div>
+            <p class="text-slate-500 dark:text-slate-400 font-medium">No entries yet</p>
+            <p class="text-slate-400 dark:text-slate-500 text-sm mt-1">Add your first income or expense to get started</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Charts Section -->
+    <div class="grid md:grid-cols-5 gap-6 mb-8">
+      <div class="md:col-span-3">
+        <div class="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 p-6">
+          <h2 class="text-lg font-bold mb-4">📊 Daily Overview</h2>
+          <div class="relative" style="height: 280px;">
+            <canvas id="bar-chart"></canvas>
+          </div>
+          <div id="bar-chart-empty" class="hidden text-center py-10">
+            <p class="text-slate-400 text-sm">Add entries to see your daily chart</p>
+          </div>
+        </div>
+      </div>
+      <div class="md:col-span-2">
+        <div class="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 p-6">
+          <h2 class="text-lg font-bold mb-4">🏷️ Expense Categories</h2>
+          <div class="relative" style="height: 280px;">
+            <canvas id="doughnut-chart"></canvas>
+          </div>
+          <div id="doughnut-chart-empty" class="hidden text-center py-10">
+            <p class="text-slate-400 text-sm">Add expense entries to see category breakdown</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Reports Section -->
+    <div class="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 p-6 mb-8">
+      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+        <h2 class="text-lg font-bold">📋 Reports</h2>
+        <div class="flex items-center gap-1 bg-slate-100 dark:bg-slate-700 rounded-lg p-1">
+          <button id="tab-daily" class="px-4 py-1.5 rounded-md text-sm font-medium transition-all bg-white dark:bg-slate-600 shadow-sm text-slate-800 dark:text-white">Daily</button>
+          <button id="tab-weekly" class="px-4 py-1.5 rounded-md text-sm font-medium transition-all text-slate-500 dark:text-slate-400 hover:text-slate-700">Weekly</button>
+          <button id="tab-alltime" class="px-4 py-1.5 rounded-md text-sm font-medium transition-all text-slate-500 dark:text-slate-400 hover:text-slate-700">All Time</button>
+        </div>
+      </div>
+
+      <div id="report-content" class="space-y-3"></div>
+
+      <div id="report-empty" class="text-center py-10 hidden">
+        <div class="text-4xl mb-2">📊</div>
+        <p class="text-slate-400 text-sm">No data for reports yet</p>
+      </div>
+
+      <!-- AI Summary -->
+      <div class="mt-6 pt-5 border-t border-slate-100 dark:border-slate-700">
+        <button id="ai-summary-btn" class="w-full bg-gradient-to-r from-indigo-500 to-purple-500 hover:from-indigo-600 hover:to-purple-600 active:scale-[0.98] text-white rounded-xl p-3.5 font-semibold text-sm transition-all flex items-center justify-center gap-2">
+          <span>✨</span> Generate AI Summary
+        </button>
+        <div id="ai-summary-output" class="mt-4 text-sm text-slate-700 dark:text-slate-300 leading-relaxed hidden rounded-xl bg-gradient-to-br from-indigo-50 to-purple-50 dark:from-indigo-950/40 dark:to-purple-950/40 border border-indigo-100 dark:border-indigo-800 p-5">
+          <div class="flex items-center gap-2 mb-2">
+            <span>🤖</span>
+            <span class="font-semibold text-indigo-700 dark:text-indigo-400">Gemini AI Summary</span>
+          </div>
+          <div id="ai-summary-text"></div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <script>
+    (function() {
+      const $ = (id) => document.getElementById(id);
+
+      const CATEGORY_CONFIG = {
+        'Sales':            { emoji: '🛒', color: '#10b981', bg: '#d1fae5', darkBg: '#064e3b' },
+        'Services':         { emoji: '🔧', color: '#14b8a6', bg: '#ccfbf1', darkBg: '#134e4a' },
+        'Other Income':     { emoji: '💰', color: '#22c55e', bg: '#dcfce7', darkBg: '#14532d' },
+        'Food & Beverages': { emoji: '🍵', color: '#f59e0b', bg: '#fef3c7', darkBg: '#451a03' },
+        'Raw Materials':    { emoji: '📦', color: '#8b5cf6', bg: '#ede9fe', darkBg: '#2e1065' },
+        'Utilities':        { emoji: '💡', color: '#3b82f6', bg: '#dbeafe', darkBg: '#1e3a5f' },
+        'Transport':        { emoji: '🚗', color: '#06b6d4', bg: '#cffafe', darkBg: '#164e63' },
+        'Salary':           { emoji: '👥', color: '#ec4899', bg: '#fce7f3', darkBg: '#500724' },
+        'Rent':             { emoji: '🏠', color: '#f97316', bg: '#ffedd5', darkBg: '#431407' },
+        'Maintenance':      { emoji: '🔨', color: '#64748b', bg: '#f1f5f9', darkBg: '#1e293b' },
+        'Marketing':        { emoji: '📢', color: '#a855f7', bg: '#f3e8ff', darkBg: '#3b0764' },
+        'Miscellaneous':    { emoji: '📋', color: '#6b7280', bg: '#f3f4f6', darkBg: '#1f2937' },
+      };
+
+      const EXPENSE_CATEGORIES = ['Food & Beverages', 'Raw Materials', 'Utilities', 'Transport', 'Salary', 'Rent', 'Maintenance', 'Marketing', 'Miscellaneous'];
+      const INCOME_CATEGORIES = ['Sales', 'Services', 'Other Income'];
+
+      const KEYWORD_MAP = {
+        'Food & Beverages': ['tea', 'coffee', 'chai', 'snack', 'food', 'lunch', 'dinner', 'breakfast', 'biscuit', 'samosa', 'water', 'juice', 'milk', 'sugar', 'sweet'],
+        'Raw Materials':    ['stock', 'material', 'supply', 'wholesale', 'bulk', 'goods', 'inventory', 'purchase', 'order', 'raw', 'cotton', 'fabric', 'wood', 'iron', 'steel', 'plastic', 'rubber', 'chemical', 'paint', 'cement', 'sand', 'brick', 'paper', 'packaging', 'thread', 'cloth', 'leather', 'metal', 'oil', 'grease', 'ingredient'],
+        'Utilities':        ['electric', 'electricity', 'bill', 'phone', 'internet', 'wifi', 'gas', 'water bill', 'recharge'],
+        'Transport':        ['petrol', 'diesel', 'fuel', 'auto', 'rickshaw', 'cab', 'taxi', 'delivery', 'courier', 'transport', 'shipping'],
+        'Salary':           ['salary', 'wage', 'staff', 'worker', 'employee', 'helper', 'labour', 'labor', 'pay'],
+        'Rent':             ['rent', 'lease', 'shop rent', 'godown'],
+        'Maintenance':      ['repair', 'fix', 'maintenance', 'service', 'cleaning', 'paint', 'plumber', 'electrician'],
+        'Marketing':        ['ad', 'advertisement', 'banner', 'poster', 'pamphlet', 'marketing', 'promotion', 'social media'],
+        'Sales':            ['sale', 'sold', 'selling', 'customer', 'order', 'revenue'],
+        'Services':         ['service', 'commission', 'fee', 'consultation', 'charge'],
+      };
+
+      let entries = JSON.parse(localStorage.getItem('entries') || '[]');
+      let apiKey = localStorage.getItem('gemini_api_key') || '';
+      let budgetGoal = parseFloat(localStorage.getItem('budget_goal') || '0');
+      let darkMode = localStorage.getItem('theme') === 'dark';
+      let barChart = null;
+      let doughnutChart = null;
+      let reportMode = 'daily';
+      let detectTimeout = null;
+
+      // --- Theme ---
+      function applyTheme() {
+        if (darkMode) {
+          document.documentElement.classList.add('dark');
+          $('theme-icon-light').classList.remove('hidden');
+          $('theme-icon-dark').classList.add('hidden');
+        } else {
+          document.documentElement.classList.remove('dark');
+          $('theme-icon-light').classList.add('hidden');
+          $('theme-icon-dark').classList.remove('hidden');
+        }
+        localStorage.setItem('theme', darkMode ? 'dark' : 'light');
+      }
+      applyTheme();
+
+      $('theme-toggle').addEventListener('click', () => {
+        darkMode = !darkMode;
+        applyTheme();
+        renderCharts();
+      });
+
+      // --- Persistence ---
+      function save() {
+        localStorage.setItem('entries', JSON.stringify(entries));
+        render();
+        renderCharts();
+        renderReports();
+        renderBudget();
+      }
+
+      // --- Formatting ---
+      function formatCurrency(n) {
+        return Number(n).toLocaleString('en-IN', { minimumFractionDigits: 0, maximumFractionDigits: 2 });
+      }
+
+      function formatDate(iso) {
+        const d = new Date(iso);
+        return d.toLocaleDateString('en-IN', { day: 'numeric', month: 'short' }) +
+          ', ' + d.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' });
+      }
+
+      function getDateLabel(iso) {
+        return new Date(iso).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', weekday: 'short' });
+      }
+
+      function getWeekKey(iso) {
+        const d = new Date(iso);
+        const start = new Date(d);
+        start.setDate(d.getDate() - d.getDay());
+        return start.toLocaleDateString('en-IN', { year: 'numeric', month: '2-digit', day: '2-digit' });
+      }
+
+      function getWeekLabel(iso) {
+        const d = new Date(iso);
+        const start = new Date(d);
+        start.setDate(d.getDate() - d.getDay());
+        const end = new Date(start);
+        end.setDate(start.getDate() + 6);
+        return start.toLocaleDateString('en-IN', { day: 'numeric', month: 'short' }) + ' – ' + end.toLocaleDateString('en-IN', { day: 'numeric', month: 'short' });
+      }
+
+      function isDark() { return darkMode; }
+
+      // --- Toast ---
+      function showToast(message, type) {
+        const container = $('toast-container');
+        const toast = document.createElement('div');
+        const colors = type === 'income'
+          ? 'bg-emerald-600 text-white'
+          : type === 'expense'
+            ? 'bg-rose-600 text-white'
+            : 'bg-slate-800 text-white';
+        toast.className = `${colors} px-4 py-2.5 rounded-xl shadow-lg text-sm font-medium toast-enter`;
+        toast.textContent = message;
+        container.appendChild(toast);
+        setTimeout(() => {
+          toast.classList.remove('toast-enter');
+          toast.classList.add('toast-exit');
+          toast.addEventListener('animationend', () => toast.remove());
+        }, 2000);
+      }
+
+      // --- Gemini API ---
+      async function callGemini(prompt) {
+        if (!apiKey) return null;
+        const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
+        const res = await fetch(url, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] }),
+        });
+        if (!res.ok) return null;
+        const data = await res.json();
+        return data.candidates?.[0]?.content?.parts?.[0]?.text?.trim() || null;
+      }
+
+      // --- Category Detection ---
+      function detectCategoryByKeywords(desc, type) {
+        const lower = desc.toLowerCase();
+        const pool = type === 'income' ? INCOME_CATEGORIES : EXPENSE_CATEGORIES;
+        for (const cat of pool) {
+          const keywords = KEYWORD_MAP[cat] || [];
+          if (keywords.some(kw => lower.includes(kw))) return cat;
+        }
+        return type === 'income' ? 'Sales' : 'Miscellaneous';
+      }
+
+      async function detectCategoryWithAI(desc, type) {
+        const categories = type === 'income'
+          ? INCOME_CATEGORIES.join(', ')
+          : EXPENSE_CATEGORIES.join(', ');
+        const prompt = `You are a financial categorizer for a small Indian shop. Given this transaction description: "${desc}"
+Transaction type: ${type}
+
+IMPORTANT: For expense items, pay special attention to "Raw Materials" category. Any purchase of base materials, supplies, ingredients, fabrics, chemicals, metals, packaging, or stock items used in the business should be classified as "Raw Materials". Common raw material examples: cotton, fabric, wood, iron, steel, plastic, rubber, chemicals, cement, sand, bricks, paper, thread, cloth, leather, oils, spices, flour, grains, packaging materials, wholesale goods.
+
+Classify into exactly ONE of these categories: ${categories}
+Respond with ONLY the category name, nothing else.`;
+        const result = await callGemini(prompt);
+        const pool = type === 'income' ? INCOME_CATEGORIES : EXPENSE_CATEGORIES;
+        if (result && pool.includes(result)) return result;
+        if (result) {
+          const match = pool.find(c => result.toLowerCase().includes(c.toLowerCase()));
+          if (match) return match;
+        }
+        return detectCategoryByKeywords(desc, type);
+      }
+
+      function triggerCategoryDetection() {
+        clearTimeout(detectTimeout);
+        const desc = $('desc').value.trim();
+        const type = $('type').value;
+        if (!desc || desc.length < 2) return;
+
+        if (apiKey) {
+          $('ai-detecting').classList.remove('hidden');
+          detectTimeout = setTimeout(async () => {
+            try {
+              const cat = await detectCategoryWithAI(desc, type);
+              $('category').value = cat;
+            } catch (err) {
+              $('category').value = detectCategoryByKeywords(desc, type);
+            }
+            $('ai-detecting').classList.add('hidden');
+          }, 600);
+        } else {
+          $('category').value = detectCategoryByKeywords(desc, type);
+        }
+      }
+
+      // --- Settings ---
+      $('settings-toggle').addEventListener('click', () => {
+        $('settings-panel').classList.toggle('hidden');
+      });
+
+      $('save-key-btn').addEventListener('click', () => {
+        const key = $('api-key-input').value.trim();
+        if (key) {
+          apiKey = key;
+          localStorage.setItem('gemini_api_key', key);
+          $('key-status').textContent = '✅ API key saved! AI features enabled.';
+          $('key-status').className = 'mt-2 text-xs text-emerald-600 dark:text-emerald-400';
+          showToast('Gemini API key saved', 'income');
+        } else {
+          apiKey = '';
+          localStorage.removeItem('gemini_api_key');
+          $('key-status').textContent = 'Key removed. Using keyword-based detection.';
+          $('key-status').className = 'mt-2 text-xs text-slate-500';
+        }
+      });
+
+      if (apiKey) {
+        $('api-key-input').value = apiKey;
+        $('key-status').textContent = '✅ API key loaded.';
+        $('key-status').className = 'mt-2 text-xs text-emerald-600 dark:text-emerald-400';
+      }
+
+      // --- Backup & Restore ---
+      $('backup-btn').addEventListener('click', () => {
+        const data = {
+          entries,
+          budgetGoal,
+          apiKey: apiKey || undefined,
+          exportedAt: new Date().toISOString(),
+          version: 1,
+        };
+        const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'smart-khata-backup-' + new Date().toISOString().slice(0, 10) + '.json';
+        a.click();
+        URL.revokeObjectURL(url);
+        showToast('Backup exported!', 'income');
+      });
+
+      $('restore-input').addEventListener('change', function() {
+        const file = this.files[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = function(e) {
+          try {
+            const data = JSON.parse(e.target.result);
+            if (!data.entries || !Array.isArray(data.entries)) {
+              showToast('Invalid backup file', 'delete');
+              return;
+            }
+            entries = data.entries.map((en, i) => ({
+              ...en,
+              id: en.id || Date.now() + i,
+              date: en.date || new Date().toISOString(),
+              category: en.category || detectCategoryByKeywords(en.desc, en.type),
+            }));
+            if (data.budgetGoal) {
+              budgetGoal = parseFloat(data.budgetGoal);
+              localStorage.setItem('budget_goal', budgetGoal);
+              $('budget-input').value = budgetGoal;
+            }
+            if (data.apiKey) {
+              apiKey = data.apiKey;
+              localStorage.setItem('gemini_api_key', apiKey);
+              $('api-key-input').value = apiKey;
+            }
+            save();
+            showToast(`Restored ${entries.length} entries!`, 'income');
+          } catch (err) {
+            showToast('Failed to read backup file', 'delete');
+          }
+        };
+        reader.readAsText(file);
+        this.value = '';
+      });
+
+      // --- Budget ---
+      $('budget-input').value = budgetGoal || '';
+
+      $('save-budget-btn').addEventListener('click', () => {
+        const val = parseFloat($('budget-input').value);
+        if (val && val > 0) {
+          budgetGoal = val;
+          localStorage.setItem('budget_goal', budgetGoal);
+          renderBudget();
+          showToast('Budget goal set: ₹' + formatCurrency(budgetGoal), 'income');
+        } else {
+          budgetGoal = 0;
+          localStorage.setItem('budget_goal', '0');
+          renderBudget();
+        }
+      });
+
+      function renderBudget() {
+        const now = new Date();
+        const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+        const monthExpense = entries
+          .filter(e => e.type === 'expense' && new Date(e.date) >= monthStart)
+          .reduce((s, e) => s + e.amount, 0);
+
+        $('budget-spent').textContent = '₹' + formatCurrency(monthExpense);
+        $('budget-limit').textContent = '₹' + formatCurrency(budgetGoal);
+
+        if (budgetGoal > 0) {
+          const pct = Math.min((monthExpense / budgetGoal) * 100, 100);
+          const remaining = Math.max(budgetGoal - monthExpense, 0);
+          $('budget-bar').style.width = pct + '%';
+
+          if (pct > 90) {
+            $('budget-bar').className = 'budget-bar h-full rounded-full bg-gradient-to-r from-rose-500 to-rose-400';
+          } else if (pct > 70) {
+            $('budget-bar').className = 'budget-bar h-full rounded-full bg-gradient-to-r from-amber-500 to-amber-400';
+          } else {
+            $('budget-bar').className = 'budget-bar h-full rounded-full bg-gradient-to-r from-emerald-500 to-emerald-400';
+          }
+
+          $('budget-pct').textContent = Math.round(pct) + '% used';
+          $('budget-remaining').textContent = monthExpense > budgetGoal
+            ? '₹' + formatCurrency(monthExpense - budgetGoal) + ' over budget!'
+            : '₹' + formatCurrency(remaining) + ' remaining';
+          $('budget-remaining').className = monthExpense > budgetGoal
+            ? 'text-xs font-semibold text-rose-600 dark:text-rose-400'
+            : 'text-xs font-semibold text-emerald-600 dark:text-emerald-400';
+        } else {
+          $('budget-bar').style.width = '0%';
+          $('budget-pct').textContent = 'Set a budget to track';
+          $('budget-remaining').textContent = '';
+        }
+      }
+
+      // --- Type change updates category ---
+      $('type').addEventListener('change', () => {
+        $('category').value = $('type').value === 'income' ? 'Sales' : 'Miscellaneous';
+        triggerCategoryDetection();
+      });
+
+      $('desc').addEventListener('input', triggerCategoryDetection);
+
+      // --- Add Entry ---
+      $('entry-form').addEventListener('submit', function(e) {
+        e.preventDefault();
+        const descEl = $('desc');
+        const amountEl = $('amount');
+        const desc = descEl.value.trim();
+        const amount = parseFloat(amountEl.value);
+        const type = $('type').value;
+        const category = $('category').value;
+
+        let valid = true;
+        descEl.classList.remove('input-error', 'shake');
+        amountEl.classList.remove('input-error', 'shake');
+
+        if (!desc) { descEl.classList.add('input-error', 'shake'); valid = false; }
+        if (!amount || amount <= 0) { amountEl.classList.add('input-error', 'shake'); valid = false; }
+        if (!valid) return;
+
+        entries.push({ desc, amount, type, category, date: new Date().toISOString(), id: Date.now() });
+        descEl.value = '';
+        amountEl.value = '';
+        $('category').value = type === 'income' ? 'Sales' : 'Miscellaneous';
+        save();
+        showToast(`${type === 'income' ? '+' : '-'}₹${formatCurrency(amount)} — ${desc}`, type);
+      });
+
+      // --- Edit Entry ---
+      function openEditModal(id) {
+        const entry = entries.find(e => e.id === id);
+        if (!entry) return;
+        $('edit-id').value = id;
+        $('edit-desc').value = entry.desc;
+        $('edit-amount').value = entry.amount;
+        $('edit-type').value = entry.type;
+        $('edit-category').value = entry.category || 'Miscellaneous';
+        $('edit-modal').classList.remove('hidden');
+      }
+
+      function closeEditModal() {
+        $('edit-modal').classList.add('hidden');
+      }
+
+      $('edit-modal-backdrop').addEventListener('click', closeEditModal);
+      $('edit-modal-close').addEventListener('click', closeEditModal);
+      $('edit-cancel-btn').addEventListener('click', closeEditModal);
+      document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeEditModal(); });
+
+      $('edit-type').addEventListener('change', () => {
+        $('edit-category').value = $('edit-type').value === 'income' ? 'Sales' : 'Miscellaneous';
+      });
+
+      $('edit-form').addEventListener('submit', function(e) {
+        e.preventDefault();
+        const id = parseInt($('edit-id').value);
+        const idx = entries.findIndex(en => en.id === id);
+        if (idx === -1) return;
+
+        const desc = $('edit-desc').value.trim();
+        const amount = parseFloat($('edit-amount').value);
+        if (!desc || !amount || amount <= 0) {
+          showToast('Please fill in all fields correctly', 'delete');
+          return;
+        }
+
+        entries[idx].desc = desc;
+        entries[idx].amount = amount;
+        entries[idx].type = $('edit-type').value;
+        entries[idx].category = $('edit-category').value;
+
+        closeEditModal();
+        save();
+        showToast('Entry updated', 'income');
+      });
+
+      // --- Delete Entry ---
+      function deleteEntry(id) {
+        entries = entries.filter(e => e.id !== id);
+        save();
+        showToast('Entry deleted', 'delete');
+      }
+
+      // --- Render Ledger ---
+      function render() {
+        const searchTerm = ($('search').value || '').toLowerCase();
+        const filterType = $('filter').value;
+
+        let totalIncome = 0, totalExpense = 0;
+        entries.forEach(e => {
+          if (e.type === 'income') totalIncome += e.amount;
+          else totalExpense += e.amount;
+        });
+
+        $('income').textContent = formatCurrency(totalIncome);
+        $('expense').textContent = formatCurrency(totalExpense);
+
+        const profit = totalIncome - totalExpense;
+        const profitCard = $('profit-card');
+        const absProfit = formatCurrency(Math.abs(profit));
+
+        if (profit < 0) {
+          profitCard.className = 'bg-gradient-to-br from-rose-500 to-rose-600 rounded-2xl shadow-lg shadow-rose-500/20 p-5 text-white transition-transform hover:scale-[1.02]';
+          $('profit').parentElement.innerHTML = '-₹<span id="profit">' + absProfit + '</span>';
+        } else {
+          profitCard.className = 'bg-gradient-to-br from-indigo-500 to-indigo-600 rounded-2xl shadow-lg shadow-indigo-500/20 p-5 text-white transition-transform hover:scale-[1.02]';
+          $('profit').parentElement.innerHTML = '₹<span id="profit">' + formatCurrency(profit) + '</span>';
+        }
+
+        const filtered = entries.filter(e => {
+          const matchesType = filterType === 'all' || e.type === filterType;
+          const matchesSearch = !searchTerm || e.desc.toLowerCase().includes(searchTerm);
+          return matchesType && matchesSearch;
+        });
+
+        const ledger = $('ledger');
+        const emptyState = $('empty-state');
+        ledger.innerHTML = '';
+
+        if (filtered.length === 0) {
+          emptyState.classList.remove('hidden');
+          if (entries.length > 0) {
+            emptyState.querySelector('p').textContent = 'No matching entries';
+            emptyState.querySelector('p:last-child').textContent = 'Try adjusting your search or filter';
+          } else {
+            emptyState.querySelector('p').textContent = 'No entries yet';
+            emptyState.querySelector('p:last-child').textContent = 'Add your first income or expense to get started';
+          }
+        } else {
+          emptyState.classList.add('hidden');
+        }
+
+        [...filtered].reverse().forEach(e => {
+          const row = document.createElement('div');
+          row.className = 'ledger-row flex items-center justify-between py-3 px-2 -mx-2 rounded-lg fade-in';
+
+          const left = document.createElement('div');
+          left.className = 'flex items-center gap-3 min-w-0';
+
+          const badge = document.createElement('span');
+          badge.className = e.type === 'income'
+            ? 'flex-shrink-0 w-2 h-2 rounded-full bg-emerald-500'
+            : 'flex-shrink-0 w-2 h-2 rounded-full bg-rose-500';
+
+          const info = document.createElement('div');
+          info.className = 'min-w-0';
+
+          const descEl = document.createElement('p');
+          descEl.className = 'text-sm font-medium truncate';
+          descEl.textContent = e.desc;
+
+          const metaRow = document.createElement('div');
+          metaRow.className = 'flex items-center gap-2 mt-0.5 flex-wrap';
+
+          const dateEl = document.createElement('span');
+          dateEl.className = 'text-xs text-slate-400';
+          dateEl.textContent = e.date ? formatDate(e.date) : 'No date';
+          metaRow.appendChild(dateEl);
+
+          if (e.category) {
+            const catConf = CATEGORY_CONFIG[e.category] || CATEGORY_CONFIG['Miscellaneous'];
+            const catBadge = document.createElement('span');
+            catBadge.className = 'text-xs px-1.5 py-0.5 rounded-md font-medium';
+            catBadge.style.backgroundColor = isDark() ? catConf.darkBg : catConf.bg;
+            catBadge.style.color = catConf.color;
+            catBadge.textContent = catConf.emoji + ' ' + e.category;
+            metaRow.appendChild(catBadge);
+          }
+
+          info.appendChild(descEl);
+          info.appendChild(metaRow);
+          left.appendChild(badge);
+          left.appendChild(info);
+
+          const right = document.createElement('div');
+          right.className = 'flex items-center gap-2 flex-shrink-0';
+
+          const amountSpan = document.createElement('span');
+          amountSpan.className = e.type === 'income'
+            ? 'text-sm font-semibold text-emerald-600 dark:text-emerald-400'
+            : 'text-sm font-semibold text-rose-600 dark:text-rose-400';
+          amountSpan.textContent = (e.type === 'income' ? '+' : '-') + '₹' + formatCurrency(e.amount);
+
+          const editBtn = document.createElement('button');
+          editBtn.className = 'row-actions text-slate-300 dark:text-slate-600 hover:text-indigo-500 dark:hover:text-indigo-400 transition-colors p-1';
+          editBtn.title = 'Edit';
+          editBtn.innerHTML = '<svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>';
+          editBtn.addEventListener('click', () => openEditModal(e.id));
+
+          const deleteBtn = document.createElement('button');
+          deleteBtn.className = 'row-actions text-slate-300 dark:text-slate-600 hover:text-rose-500 dark:hover:text-rose-400 transition-colors p-1';
+          deleteBtn.title = 'Delete';
+          deleteBtn.innerHTML = '<svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>';
+          deleteBtn.addEventListener('click', () => deleteEntry(e.id));
+
+          right.appendChild(amountSpan);
+          right.appendChild(editBtn);
+          right.appendChild(deleteBtn);
+
+          row.appendChild(left);
+          row.appendChild(right);
+          ledger.appendChild(row);
+        });
+      }
+
+      // --- Charts ---
+      function chartTextColor() { return isDark() ? '#94a3b8' : '#64748b'; }
+      function chartGridColor() { return isDark() ? '#1e293b' : '#f1f5f9'; }
+
+      function renderCharts() {
+        renderBarChart();
+        renderDoughnutChart();
+      }
+
+      function renderBarChart() {
+        const canvas = $('bar-chart');
+        const emptyEl = $('bar-chart-empty');
+
+        if (entries.length === 0) {
+          canvas.style.display = 'none';
+          emptyEl.classList.remove('hidden');
+          if (barChart) { barChart.destroy(); barChart = null; }
+          return;
+        }
+        canvas.style.display = 'block';
+        emptyEl.classList.add('hidden');
+
+        const dayMap = {};
+        const today = new Date();
+        for (let i = 6; i >= 0; i--) {
+          const d = new Date(today);
+          d.setDate(today.getDate() - i);
+          const key = d.toISOString().slice(0, 10);
+          dayMap[key] = { income: 0, expense: 0, label: d.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', weekday: 'short' }) };
+        }
+
+        entries.forEach(e => {
+          if (!e.date) return;
+          const key = new Date(e.date).toISOString().slice(0, 10);
+          if (dayMap[key]) {
+            if (e.type === 'income') dayMap[key].income += e.amount;
+            else dayMap[key].expense += e.amount;
+          }
+        });
+
+        const labels = Object.values(dayMap).map(d => d.label);
+        const incomeData = Object.values(dayMap).map(d => d.income);
+        const expenseData = Object.values(dayMap).map(d => d.expense);
+
+        if (barChart) barChart.destroy();
+
+        barChart = new Chart(canvas, {
+          type: 'bar',
+          data: {
+            labels,
+            datasets: [
+              {
+                label: 'Income',
+                data: incomeData,
+                backgroundColor: 'rgba(16, 185, 129, 0.8)',
+                borderRadius: 6,
+                borderSkipped: false,
+              },
+              {
+                label: 'Expense',
+                data: expenseData,
+                backgroundColor: 'rgba(244, 63, 94, 0.8)',
+                borderRadius: 6,
+                borderSkipped: false,
+              }
+            ]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+              legend: {
+                position: 'top',
+                labels: { usePointStyle: true, pointStyle: 'circle', padding: 15, font: { size: 12, family: 'Inter' }, color: chartTextColor() }
+              },
+              tooltip: {
+                callbacks: {
+                  label: (ctx) => `${ctx.dataset.label}: ₹${formatCurrency(ctx.raw)}`
+                }
+              }
+            },
+            scales: {
+              x: { grid: { display: false }, ticks: { font: { size: 11, family: 'Inter' }, color: chartTextColor() } },
+              y: {
+                beginAtZero: true,
+                grid: { color: chartGridColor() },
+                ticks: {
+                  font: { size: 11, family: 'Inter' },
+                  color: chartTextColor(),
+                  callback: (v) => '₹' + formatCurrency(v)
+                }
+              }
+            }
+          }
+        });
+      }
+
+      function renderDoughnutChart() {
+        const canvas = $('doughnut-chart');
+        const emptyEl = $('doughnut-chart-empty');
+
+        const expenseEntries = entries.filter(e => e.type === 'expense');
+        if (expenseEntries.length === 0) {
+          canvas.style.display = 'none';
+          emptyEl.classList.remove('hidden');
+          if (doughnutChart) { doughnutChart.destroy(); doughnutChart = null; }
+          return;
+        }
+        canvas.style.display = 'block';
+        emptyEl.classList.add('hidden');
+
+        const catTotals = {};
+        expenseEntries.forEach(e => {
+          const cat = e.category || 'Miscellaneous';
+          catTotals[cat] = (catTotals[cat] || 0) + e.amount;
+        });
+
+        const sorted = Object.entries(catTotals).sort((a, b) => b[1] - a[1]);
+        const labels = sorted.map(([cat]) => {
+          const conf = CATEGORY_CONFIG[cat] || CATEGORY_CONFIG['Miscellaneous'];
+          return conf.emoji + ' ' + cat;
+        });
+        const data = sorted.map(([, val]) => val);
+        const colors = sorted.map(([cat]) => (CATEGORY_CONFIG[cat] || CATEGORY_CONFIG['Miscellaneous']).color);
+
+        if (doughnutChart) doughnutChart.destroy();
+
+        doughnutChart = new Chart(canvas, {
+          type: 'doughnut',
+          data: {
+            labels,
+            datasets: [{
+              data,
+              backgroundColor: colors,
+              borderWidth: 0,
+              hoverOffset: 6,
+            }]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            cutout: '65%',
+            plugins: {
+              legend: {
+                position: 'bottom',
+                labels: { usePointStyle: true, pointStyle: 'circle', padding: 10, font: { size: 11, family: 'Inter' }, color: chartTextColor() }
+              },
+              tooltip: {
+                callbacks: {
+                  label: (ctx) => {
+                    const total = ctx.dataset.data.reduce((a, b) => a + b, 0);
+                    const pct = Math.round((ctx.raw / total) * 100);
+                    return `₹${formatCurrency(ctx.raw)} (${pct}%)`;
+                  }
+                }
+              }
+            },
+          }
+        });
+      }
+
+      // --- Reports ---
+      function renderReports() {
+        const content = $('report-content');
+        const emptyEl = $('report-empty');
+        content.innerHTML = '';
+
+        if (entries.length === 0) {
+          emptyEl.classList.remove('hidden');
+          return;
+        }
+        emptyEl.classList.add('hidden');
+
+        if (reportMode === 'alltime') {
+          renderAllTimeReport(content);
+          return;
+        }
+
+        const grouped = {};
+        const sortedEntries = [...entries].sort((a, b) => new Date(b.date) - new Date(a.date));
+
+        sortedEntries.forEach(e => {
+          const key = reportMode === 'daily'
+            ? (e.date ? new Date(e.date).toISOString().slice(0, 10) : 'unknown')
+            : getWeekKey(e.date);
+          if (!grouped[key]) grouped[key] = { entries: [], label: '' };
+          grouped[key].entries.push(e);
+          if (!grouped[key].label) {
+            grouped[key].label = reportMode === 'daily' ? getDateLabel(e.date) : getWeekLabel(e.date);
+          }
+        });
+
+        Object.entries(grouped).forEach(([key, group]) => {
+          content.appendChild(buildReportCard(group));
+        });
+      }
+
+      function safeCatLabel(cat) {
+        const el = document.createElement('span');
+        el.textContent = cat;
+        return el.innerHTML;
+      }
+
+      function buildCatBadges(catBreakdown, limit) {
+        return Object.entries(catBreakdown)
+          .sort((a, b) => b[1] - a[1])
+          .slice(0, limit)
+          .map(([cat, amt]) => {
+            const conf = CATEGORY_CONFIG[cat] || CATEGORY_CONFIG['Miscellaneous'];
+            return `<span class="inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-md font-medium" style="background:${isDark() ? conf.darkBg : conf.bg};color:${conf.color}">${conf.emoji} ${safeCatLabel(cat)} ₹${formatCurrency(amt)}</span>`;
+          }).join(' ');
+      }
+
+      function renderAllTimeReport(content) {
+        let inc = 0, exp = 0;
+        const catBreakdown = {};
+        entries.forEach(e => {
+          if (e.type === 'income') inc += e.amount;
+          else {
+            exp += e.amount;
+            const cat = e.category || 'Miscellaneous';
+            catBreakdown[cat] = (catBreakdown[cat] || 0) + e.amount;
+          }
+        });
+        const profit = inc - exp;
+
+        const validDates = entries.map(e => new Date(e.date)).filter(d => !isNaN(d)).sort((a, b) => a - b);
+        const firstDate = validDates.length > 0 ? validDates[0].toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }) : '—';
+        const lastDate = validDates.length > 0 ? validDates[validDates.length - 1].toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }) : '—';
+
+        const incomeDays = new Set();
+        const expenseDays = new Set();
+        entries.forEach(e => {
+          try {
+            const key = new Date(e.date).toISOString().slice(0, 10);
+            if (e.type === 'income') incomeDays.add(key);
+            else expenseDays.add(key);
+          } catch (_) { /* skip invalid dates */ }
+        });
+        const avgDailyIncome = formatCurrency(inc / Math.max(1, incomeDays.size));
+        const avgDailyExpense = formatCurrency(exp / Math.max(1, expenseDays.size));
+
+        const topCats = buildCatBadges(catBreakdown, 5);
+
+        const card = document.createElement('div');
+        card.className = 'border border-slate-100 dark:border-slate-700 rounded-xl p-5 fade-in';
+        card.innerHTML = `
+          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-3">
+            <span class="font-semibold text-sm">📊 All Time Summary</span>
+            <span class="text-xs text-slate-400">${firstDate} — ${lastDate} · ${entries.length} entries</span>
+          </div>
+          <div class="grid grid-cols-3 gap-4 mb-3">
+            <div class="text-center">
+              <p class="text-xs text-slate-400 mb-0.5">Total Income</p>
+              <p class="text-lg font-bold text-emerald-600 dark:text-emerald-400">₹${formatCurrency(inc)}</p>
+            </div>
+            <div class="text-center">
+              <p class="text-xs text-slate-400 mb-0.5">Total Expense</p>
+              <p class="text-lg font-bold text-rose-600 dark:text-rose-400">₹${formatCurrency(exp)}</p>
+            </div>
+            <div class="text-center">
+              <p class="text-xs text-slate-400 mb-0.5">Net Profit</p>
+              <p class="text-lg font-bold ${profit >= 0 ? 'text-indigo-600 dark:text-indigo-400' : 'text-rose-600 dark:text-rose-400'}">${profit < 0 ? '-' : ''}₹${formatCurrency(Math.abs(profit))}</p>
+            </div>
+          </div>
+          ${entries.length > 0 ? `
+          <div class="grid grid-cols-2 gap-3 mb-3 text-sm">
+            <div class="bg-slate-50 dark:bg-slate-700/50 rounded-lg p-3 text-center">
+              <p class="text-xs text-slate-400 mb-1">Avg Daily Income</p>
+              <p class="font-semibold text-emerald-600 dark:text-emerald-400">₹${avgDailyIncome}</p>
+            </div>
+            <div class="bg-slate-50 dark:bg-slate-700/50 rounded-lg p-3 text-center">
+              <p class="text-xs text-slate-400 mb-1">Avg Daily Expense</p>
+              <p class="font-semibold text-rose-600 dark:text-rose-400">₹${avgDailyExpense}</p>
+            </div>
+          </div>` : ''}
+          ${topCats ? `<div class="flex flex-wrap gap-1.5">${topCats}</div>` : ''}
+        `;
+        content.appendChild(card);
+      }
+
+      function buildReportCard(group) {
+        let inc = 0, exp = 0;
+        const catBreakdown = {};
+        group.entries.forEach(e => {
+          if (e.type === 'income') inc += e.amount;
+          else {
+            exp += e.amount;
+            const cat = e.category || 'Miscellaneous';
+            catBreakdown[cat] = (catBreakdown[cat] || 0) + e.amount;
+          }
+        });
+        const profit = inc - exp;
+
+        const card = document.createElement('div');
+        card.className = 'border border-slate-100 dark:border-slate-700 rounded-xl p-4 hover:border-slate-200 dark:hover:border-slate-600 transition-all fade-in';
+
+        const topCats = buildCatBadges(catBreakdown, 3);
+
+        card.innerHTML = `
+          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-2">
+            <span class="font-semibold text-sm">${group.label}</span>
+            <span class="text-xs text-slate-400">${group.entries.length} entries</span>
+          </div>
+          <div class="grid grid-cols-3 gap-3 mb-2">
+            <div class="text-center">
+              <p class="text-xs text-slate-400 mb-0.5">Income</p>
+              <p class="text-sm font-bold text-emerald-600 dark:text-emerald-400">₹${formatCurrency(inc)}</p>
+            </div>
+            <div class="text-center">
+              <p class="text-xs text-slate-400 mb-0.5">Expense</p>
+              <p class="text-sm font-bold text-rose-600 dark:text-rose-400">₹${formatCurrency(exp)}</p>
+            </div>
+            <div class="text-center">
+              <p class="text-xs text-slate-400 mb-0.5">Profit</p>
+              <p class="text-sm font-bold ${profit >= 0 ? 'text-indigo-600 dark:text-indigo-400' : 'text-rose-600 dark:text-rose-400'}">${profit < 0 ? '-' : ''}₹${formatCurrency(Math.abs(profit))}</p>
+            </div>
+          </div>
+          ${topCats ? `<div class="flex flex-wrap gap-1.5">${topCats}</div>` : ''}
+        `;
+        return card;
+      }
+
+      // --- Report Tabs ---
+      const TAB_ACTIVE = 'px-4 py-1.5 rounded-md text-sm font-medium transition-all bg-white dark:bg-slate-600 shadow-sm text-slate-800 dark:text-white';
+      const TAB_INACTIVE = 'px-4 py-1.5 rounded-md text-sm font-medium transition-all text-slate-500 dark:text-slate-400 hover:text-slate-700';
+
+      function setReportTab(mode) {
+        reportMode = mode;
+        $('tab-daily').className = mode === 'daily' ? TAB_ACTIVE : TAB_INACTIVE;
+        $('tab-weekly').className = mode === 'weekly' ? TAB_ACTIVE : TAB_INACTIVE;
+        $('tab-alltime').className = mode === 'alltime' ? TAB_ACTIVE : TAB_INACTIVE;
+        renderReports();
+      }
+
+      $('tab-daily').addEventListener('click', () => setReportTab('daily'));
+      $('tab-weekly').addEventListener('click', () => setReportTab('weekly'));
+      $('tab-alltime').addEventListener('click', () => setReportTab('alltime'));
+
+      // --- AI Summary ---
+      $('ai-summary-btn').addEventListener('click', async function() {
+        const btn = this;
+        const outputWrap = $('ai-summary-output');
+        const outputText = $('ai-summary-text');
+
+        if (entries.length === 0) {
+          showToast('Add some entries first', 'delete');
+          return;
+        }
+
+        btn.disabled = true;
+        btn.innerHTML = '<span class="spinner inline-block w-4 h-4 border-2 border-white border-t-transparent rounded-full"></span> Generating...';
+
+        const totalIncome = entries.filter(e => e.type === 'income').reduce((s, e) => s + e.amount, 0);
+        const totalExpense = entries.filter(e => e.type === 'expense').reduce((s, e) => s + e.amount, 0);
+        const profit = totalIncome - totalExpense;
+
+        const catBreakdown = {};
+        entries.filter(e => e.type === 'expense').forEach(e => {
+          const cat = e.category || 'Miscellaneous';
+          catBreakdown[cat] = (catBreakdown[cat] || 0) + e.amount;
+        });
+        const catSummary = Object.entries(catBreakdown)
+          .sort((a, b) => b[1] - a[1])
+          .map(([cat, amt]) => `${cat}: ₹${amt}`)
+          .join(', ');
+
+        const dayGroups = {};
+        entries.forEach(e => {
+          const day = e.date ? new Date(e.date).toLocaleDateString('en-IN', { weekday: 'short', day: 'numeric', month: 'short' }) : 'unknown';
+          if (!dayGroups[day]) dayGroups[day] = { income: 0, expense: 0 };
+          if (e.type === 'income') dayGroups[day].income += e.amount;
+          else dayGroups[day].expense += e.amount;
+        });
+        const dailySummary = Object.entries(dayGroups)
+          .map(([day, d]) => `${day}: Income ₹${d.income}, Expense ₹${d.expense}`)
+          .join('\n');
+
+        const periodLabel = reportMode === 'alltime' ? 'all-time' : reportMode;
+        const budgetInfo = budgetGoal > 0 ? `\nMonthly Budget: ₹${budgetGoal}` : '';
+
+        if (apiKey) {
+          const prompt = `You are a smart financial advisor for a small Indian shop owner. Analyze this ${periodLabel} financial data and give actionable business advice.
+
+Total Income: ₹${totalIncome}
+Total Expense: ₹${totalExpense}
+Profit: ₹${profit}${budgetInfo}
+
+Expense Categories: ${catSummary || 'No expenses recorded'}
+
+Daily Breakdown:
+${dailySummary}
+
+Recent transactions:
+${entries.slice(-15).map(e => `- ${e.desc} (${e.type}, ₹${e.amount}, ${e.category || 'uncategorized'})`).join('\n')}
+
+Provide a concise ${periodLabel} report in 4-5 bullet points covering:
+1. Overall financial health assessment
+2. Top spending categories — especially flag if Raw Materials spending seems high or unusual
+3. Income trends and suggestions
+4. Specific actionable tip to improve profit
+5. ${budgetGoal > 0 ? 'Budget adherence analysis' : 'One smart saving or investment suggestion'}
+
+Use emojis and keep it friendly. Format each point on a new line starting with an emoji bullet.`;
+
+          try {
+            const result = await callGemini(prompt);
+            if (result) {
+              const safe = result.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+              outputText.innerHTML = safe.replace(/\n/g, '<br>');
+            } else {
+              outputText.innerHTML = generateLocalSummary(totalIncome, totalExpense, profit, catBreakdown);
+            }
+          } catch (err) {
+            outputText.innerHTML = generateLocalSummary(totalIncome, totalExpense, profit, catBreakdown);
+          }
+        } else {
+          outputText.innerHTML = generateLocalSummary(totalIncome, totalExpense, profit, catBreakdown);
+        }
+
+        outputWrap.classList.remove('hidden');
+        btn.disabled = false;
+        btn.innerHTML = '<span>✨</span> Generate AI Summary';
+      });
+
+      function generateLocalSummary(totalIncome, totalExpense, profit, catBreakdown) {
+        const ratio = totalIncome > 0 ? totalExpense / totalIncome : 0;
+        const topCats = Object.entries(catBreakdown).sort((a, b) => b[1] - a[1]);
+        const topCat = topCats[0];
+
+        let lines = [];
+
+        if (profit > 0) {
+          lines.push(`📈 <b>Good news!</b> You're profitable with ₹${formatCurrency(profit)} net profit.`);
+        } else if (profit === 0) {
+          lines.push(`⚖️ <b>Break even.</b> Income and expenses are balanced — aim for positive margins.`);
+        } else {
+          lines.push(`📉 <b>Warning:</b> You're running at a loss of ₹${formatCurrency(Math.abs(profit))}. Immediate action needed!`);
+        }
+
+        if (topCat) {
+          const pct = Math.round((topCat[1] / totalExpense) * 100);
+          lines.push(`🏷️ <b>Top expense:</b> ${topCat[0]} at ₹${formatCurrency(topCat[1])} (${pct}% of spending). ${pct > 50 ? 'This is very concentrated — diversify or negotiate rates.' : 'Spending is well-distributed.'}`);
+        }
+
+        const rawMat = catBreakdown['Raw Materials'];
+        if (rawMat && rawMat > totalExpense * 0.3) {
+          lines.push(`📦 <b>Raw Materials:</b> ₹${formatCurrency(rawMat)} (${Math.round((rawMat/totalExpense)*100)}% of expenses). Consider bulk purchasing or finding alternative suppliers.`);
+        }
+
+        if (ratio > 0.85) {
+          lines.push(`🚨 <b>Expense ratio:</b> ${Math.round(ratio * 100)}% — critically high! Cut non-essential costs immediately.`);
+        } else if (ratio > 0.7) {
+          lines.push(`⚠️ <b>Expense ratio:</b> ${Math.round(ratio * 100)}% — margins are thin. Look for areas to reduce spending.`);
+        } else {
+          lines.push(`✅ <b>Expense ratio:</b> ${Math.round(ratio * 100)}% — healthy margins! Keep this up.`);
+        }
+
+        if (budgetGoal > 0) {
+          const now = new Date();
+          const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+          const monthExp = entries.filter(e => e.type === 'expense' && new Date(e.date) >= monthStart).reduce((s, e) => s + e.amount, 0);
+          const budgetPct = Math.round((monthExp / budgetGoal) * 100);
+          if (monthExp > budgetGoal) {
+            lines.push(`🎯 <b>Budget:</b> Over budget by ₹${formatCurrency(monthExp - budgetGoal)} (${budgetPct}% of ₹${formatCurrency(budgetGoal)} limit)!`);
+          } else {
+            lines.push(`🎯 <b>Budget:</b> ${budgetPct}% used — ₹${formatCurrency(budgetGoal - monthExp)} remaining this month.`);
+          }
+        } else if (profit > 0) {
+          lines.push(`💡 <b>Tip:</b> Save ₹${formatCurrency(profit * 0.2)} (20% of profit) as an emergency fund.`);
+        }
+
+        lines.push(`📊 <b>Entries:</b> ${entries.length} total transactions tracked. ${!apiKey ? '<br><span class="text-indigo-500 dark:text-indigo-400">💡 Add your Gemini API key in settings for smarter AI-powered insights!</span>' : ''}`);
+
+        return lines.join('<br><br>');
+      }
+
+      // --- Search & Filter ---
+      $('search').addEventListener('input', render);
+      $('filter').addEventListener('change', render);
+
+      // --- CSV Export ---
+      $('export-btn').addEventListener('click', function() {
+        if (entries.length === 0) {
+          showToast('Nothing to export', 'delete');
+          return;
+        }
+        const header = 'Date,Description,Type,Category,Amount';
+        const rows = entries.map(e => {
+          const date = e.date ? new Date(e.date).toLocaleString('en-IN') : '';
+          const desc = '"' + e.desc.replace(/"/g, '""') + '"';
+          return `${date},${desc},${e.type},${e.category || ''},${e.amount}`;
+        });
+        const csv = [header, ...rows].join('\n');
+        const blob = new Blob([csv], { type: 'text/csv' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'smart-khata-' + new Date().toISOString().slice(0, 10) + '.csv';
+        a.click();
+        URL.revokeObjectURL(url);
+        showToast('CSV exported!', 'income');
+      });
+
+      // --- Remove error styling on input ---
+      $('desc').addEventListener('input', function() { this.classList.remove('input-error', 'shake'); });
+      $('amount').addEventListener('input', function() { this.classList.remove('input-error', 'shake'); });
+
+      // --- Migrate old entries ---
+      entries = entries.map((e, i) => ({
+        ...e,
+        id: e.id || Date.now() + i,
+        date: e.date || new Date().toISOString(),
+        category: e.category || detectCategoryByKeywords(e.desc, e.type),
+      }));
+      save();
+    })();
+  </script>
+</body>
+</html>
